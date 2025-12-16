@@ -76,6 +76,43 @@ a:hover {
   box-shadow: var(--shadow);
 }
 
+.game-switcher {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 14px;
+  margin-top: -6px;
+}
+
+.switcher-copy h2 {
+  margin: 4px 0 2px;
+}
+
+.switch-btn {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: #0f1320;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 120ms ease, transform 120ms ease, box-shadow 120ms ease;
+}
+
+.switch-btn:hover {
+  border-color: var(--accent-2);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow);
+}
+
+.game-panel:not(.active) {
+  display: none;
+}
+
 .eyebrow {
   text-transform: uppercase;
   letter-spacing: 0.12em;
@@ -270,6 +307,111 @@ a:hover {
   border-color: var(--danger);
 }
 
+.nback-layout {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 14px;
+}
+
+.nback-grid-shell {
+  background: #0f1320;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+}
+
+.nback-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.nback-cell {
+  aspect-ratio: 1 / 1;
+  border-radius: 10px;
+  background: #0b0e18;
+  border: 1px solid var(--border);
+  transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+}
+
+.nback-cell.nback-current {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(93, 212, 167, 0.28);
+  transform: scale(1.02);
+}
+
+.nback-cell.nback-hit {
+  border-color: var(--accent-2);
+  box-shadow: 0 0 0 2px rgba(125, 165, 255, 0.28);
+}
+
+.nback-cell.nback-miss {
+  border-color: var(--danger);
+  background: #1d0f14;
+  box-shadow: 0 0 0 2px rgba(255, 122, 122, 0.26);
+}
+
+.nback-info {
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  gap: 12px;
+  align-content: start;
+}
+
+.nback-letter-card {
+  background: #0f1320;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+}
+
+.nback-letter {
+  margin: 6px 0 0;
+  font-size: 32px;
+  font-weight: 800;
+}
+
+.nback-letter.flash-hit {
+  color: var(--accent);
+}
+
+.nback-letter.flash-miss {
+  color: var(--danger);
+}
+
+.nback-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.nback-actions button {
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #0f1320;
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 600;
+  transition: transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.nback-actions button:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent);
+  box-shadow: var(--shadow);
+}
+
+.nback-score {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #0f1320;
+  border: 1px dashed var(--border);
+  color: var(--muted);
+  font-size: 14px;
+}
+
 .site-footer {
   text-align: center;
   color: var(--muted);
@@ -290,5 +432,18 @@ a:hover {
 
   .status {
     text-align: left;
+  }
+
+  .nback-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .game-switcher {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .switch-btn {
+    justify-self: center;
   }
 }

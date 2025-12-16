@@ -3,14 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mini Games | Memory Tester</title>
+  <title>Mini Games | Memory & Dual N-Back</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="site-header">
     <div class="logo">Mini Games</div>
     <nav class="site-nav">
-      <a href="#memory-tester">Memory Tester</a>
+      <a href="#games">Games</a>
+      <a href="#dual-n-back" data-game-target="nback">Dual N-Back</a>
     </nav>
   </header>
 
@@ -18,21 +19,31 @@
     <section class="hero">
       <div>
         <p class="eyebrow">Browser games</p>
-        <h1>Test your recall with the Memory Tester</h1>
-        <p class="lede">Pick a grid size, watch a pattern flash, then click the sequence back. Start simple or stretch to tougher layouts.</p>
+        <h1>Sharpen your working memory</h1>
+        <p class="lede">Bounce between quick exercises: the original Memory Tester and a new Dual N-Back stream. Tune the difficulty and chase clean streaks.</p>
         <div class="cta-row">
-          <a class="cta" href="#memory-tester">Play now</a>
-          <span class="hint">More games can plug into this shell later.</span>
+          <a class="cta" href="#games">Choose a game</a>
+          <span class="hint">Use the arrows to flip between modes.</span>
         </div>
       </div>
       <div class="hero-card">
         <p class="hero-label">Current game</p>
-        <p class="hero-title">Memory Tester</p>
-        <p class="hero-sub">Sequence recall on a custom grid.</p>
+        <p class="hero-title" id="hero-game-title">Memory Tester</p>
+        <p class="hero-sub" id="hero-game-sub">Sequence recall on a custom grid.</p>
       </div>
     </section>
 
-    <section id="memory-tester" class="card">
+    <section id="games" class="card game-switcher">
+      <button type="button" class="switch-btn" id="game-prev" aria-label="Previous game">&#8592;</button>
+      <div class="switcher-copy">
+        <p class="eyebrow">Switch game</p>
+        <h2 id="switch-title">Memory Tester</h2>
+        <p class="hint" id="switch-sub">Sequence recall on a custom grid.</p>
+      </div>
+      <button type="button" class="switch-btn" id="game-next" aria-label="Next game">&#8594;</button>
+    </section>
+
+    <section id="memory-tester" class="card game-panel active" data-game-id="memory">
       <header class="card-header">
         <div>
           <p class="eyebrow">Game 01</p>
@@ -58,6 +69,50 @@
 
       <div class="grid-shell">
         <div id="grid" class="grid" role="grid" aria-label="Memory grid"></div>
+      </div>
+    </section>
+
+    <section id="dual-n-back" class="card game-panel" data-game-id="nback">
+      <header class="card-header">
+        <div>
+          <p class="eyebrow">Game 02</p>
+          <h2>Dual N-Back</h2>
+        </div>
+        <p class="status" id="nback-status">Pick N and hit start to begin.</p>
+      </header>
+
+      <form class="controls" id="nback-controls" autocomplete="off">
+        <label class="control">
+          <span>N level</span>
+          <input type="number" id="nback-level" name="nback-level" min="1" max="4" value="2" required />
+        </label>
+        <label class="control">
+          <span>Speed (ms per turn)</span>
+          <input type="number" id="nback-speed" name="nback-speed" min="1000" max="5000" step="100" value="2200" required />
+        </label>
+        <div class="control actions">
+          <button type="button" id="nback-start">Start</button>
+          <button type="button" id="nback-stop">Stop</button>
+        </div>
+      </form>
+
+      <div class="nback-layout">
+        <div class="nback-grid-shell">
+          <div id="nback-grid" class="nback-grid" role="grid" aria-label="Dual N-Back grid"></div>
+          <p class="hint">Press position match if this square repeats N steps back.</p>
+        </div>
+        <div class="nback-info">
+          <div class="nback-letter-card">
+            <p class="eyebrow">Letter stream</p>
+            <p class="nback-letter" id="nback-letter">-</p>
+            <p class="hint">Press letter match if it repeats N steps back.</p>
+          </div>
+          <div class="nback-actions">
+            <button type="button" id="nback-pos-match">Position match</button>
+            <button type="button" id="nback-letter-match">Letter match</button>
+          </div>
+          <div class="nback-score" id="nback-score">Position: 0/0 | Letter: 0/0</div>
+        </div>
       </div>
     </section>
   </main>

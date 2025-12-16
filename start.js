@@ -1,237 +1,473 @@
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g = Object.create((typeof Iterator === "function" ? Iterator : Object).prototype);
-    return g.next = verb(0), g["throw"] = verb(1), g["return"] = verb(2), typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
-    function verb(n) { return function (v) { return step([n, v]); }; }
-    function step(op) {
-        if (f) throw new TypeError("Generator is already executing.");
-        while (g && (g = 0, op[0] && (_ = 0)), _) try {
-            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [op[0] & 2, t.value];
-            switch (op[0]) {
-                case 0: case 1: t = op; break;
-                case 4: _.label++; return { value: op[1], done: false };
-                case 5: _.label++; y = op[1]; op = [0]; continue;
-                case 7: op = _.ops.pop(); _.trys.pop(); continue;
-                default:
-                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
-                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
-                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
-                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
-                    if (t[2]) _.ops.pop();
-                    _.trys.pop(); continue;
-            }
-            op = body.call(thisArg, _);
-        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+﻿const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+
+const initMemoryTester = () => {
+  const gridSizeInput = document.querySelector("#grid-size");
+  const patternLengthInput = document.querySelector("#pattern-length");
+  const showPatternBtn = document.querySelector("#show-pattern");
+  const resetBtn = document.querySelector("#reset");
+  const gridEl = document.querySelector("#grid");
+  const statusEl = document.querySelector("#status");
+
+  if (!gridSizeInput || !patternLengthInput || !showPatternBtn || !resetBtn || !gridEl || !statusEl) {
+    throw new Error("Required UI elements are missing for Memory Tester.");
+  }
+
+  let gridSize = 4;
+  let patternLength = 5;
+  let sequence = [];
+  let phase = "idle";
+  let userIndex = 0;
+
+  const getCell = (index) => gridEl.querySelector(`[data-index="${index}"]`);
+
+  const updateStatus = (text) => {
+    statusEl.textContent = text;
+  };
+
+  const clearCellState = () => {
+    const cells = gridEl.querySelectorAll(".cell");
+    cells.forEach((cell) => cell.classList.remove("showing", "user-hit", "miss"));
+  };
+
+  const syncSettingsFromInputs = () => {
+    const parsedSize = Number.parseInt(gridSizeInput.value, 10);
+    gridSize = clamp(Number.isNaN(parsedSize) ? 4 : parsedSize, 2, 8);
+    gridSizeInput.value = String(gridSize);
+
+    const maxPattern = gridSize * gridSize;
+    patternLengthInput.max = String(maxPattern);
+    const parsedLength = Number.parseInt(patternLengthInput.value, 10);
+    patternLength = clamp(Number.isNaN(parsedLength) ? 5 : parsedLength, 2, maxPattern);
+    patternLengthInput.value = String(patternLength);
+  };
+
+  const handleUserInput = (index) => {
+    if (phase !== "input") return;
+
+    const expected = sequence[userIndex];
+    if (index === expected) {
+      const cell = getCell(index);
+      if (cell) {
+        cell.classList.add("user-hit");
+        setTimeout(() => cell.classList.remove("user-hit"), 350);
+      }
+
+      userIndex += 1;
+      if (userIndex === sequence.length) {
+        endRound(true);
+      } else {
+        updateStatus(`Good so far: ${userIndex}/${sequence.length}`);
+      }
+    } else {
+      endRound(false, index);
     }
-};
-var _this = this;
-var sleep = function (ms) { return new Promise(function (resolve) { return setTimeout(resolve, ms); }); };
-document.addEventListener("DOMContentLoaded", function () {
-    var gridSizeInput = document.querySelector("#grid-size");
-    var patternLengthInput = document.querySelector("#pattern-length");
-    var showPatternBtn = document.querySelector("#show-pattern");
-    var resetBtn = document.querySelector("#reset");
-    var gridEl = document.querySelector("#grid");
-    var statusEl = document.querySelector("#status");
-    if (!gridSizeInput || !patternLengthInput || !showPatternBtn || !resetBtn || !gridEl || !statusEl) {
-        throw new Error("Required UI elements are missing.");
+  };
+
+  const buildGrid = (size) => {
+    gridEl.innerHTML = "";
+    gridEl.style.gridTemplateColumns = `repeat(${size}, minmax(0, 1fr))`;
+
+    for (let i = 0; i < size * size; i += 1) {
+      const cell = document.createElement("button");
+      cell.type = "button";
+      cell.className = "cell";
+      cell.dataset.index = String(i);
+      const row = Math.floor(i / size) + 1;
+      const col = (i % size) + 1;
+      cell.setAttribute("aria-label", `Cell ${row}, ${col}`);
+      cell.addEventListener("click", () => handleUserInput(i));
+      gridEl.appendChild(cell);
     }
-    var gridSize = 4;
-    var patternLength = 5;
-    var sequence = [];
-    var phase = "idle";
-    var userIndex = 0;
-    var clamp = function (value, min, max) { return Math.min(Math.max(value, min), max); };
-    var getCell = function (index) {
-        return gridEl.querySelector("[data-index=\"".concat(index, "\"]"));
-    };
-    var updateStatus = function (text) {
-        statusEl.textContent = text;
-    };
-    var clearCellState = function () {
-        var cells = gridEl.querySelectorAll(".cell");
-        cells.forEach(function (cell) { return cell.classList.remove("showing", "user-hit", "miss"); });
-    };
-    var syncSettingsFromInputs = function () {
-        var parsedSize = Number.parseInt(gridSizeInput.value, 10);
-        gridSize = clamp(Number.isNaN(parsedSize) ? 4 : parsedSize, 2, 8);
-        gridSizeInput.value = String(gridSize);
-        var maxPattern = gridSize * gridSize;
-        patternLengthInput.max = String(maxPattern);
-        var parsedLength = Number.parseInt(patternLengthInput.value, 10);
-        patternLength = clamp(Number.isNaN(parsedLength) ? 5 : parsedLength, 2, maxPattern);
-        patternLengthInput.value = String(patternLength);
-    };
-    var buildGrid = function (size) {
-        gridEl.innerHTML = "";
-        gridEl.style.gridTemplateColumns = "repeat(".concat(size, ", minmax(0, 1fr))");
-        var _loop_1 = function (i) {
-            var cell = document.createElement("button");
-            cell.type = "button";
-            cell.className = "cell";
-            cell.dataset.index = String(i);
-            var row = Math.floor(i / size) + 1;
-            var col = (i % size) + 1;
-            cell.setAttribute("aria-label", "Cell ".concat(row, ", ").concat(col));
-            cell.addEventListener("click", function () { return handleUserInput(i); });
-            gridEl.appendChild(cell);
-        };
-        for (var i = 0; i < size * size; i += 1) {
-            _loop_1(i);
+  };
+
+  const lockButtons = (locked) => {
+    showPatternBtn.disabled = locked;
+    resetBtn.disabled = locked && phase === "showing";
+  };
+
+  const generateSequence = (length, maxIndex) => {
+    const next = [];
+    for (let i = 0; i < length; i += 1) {
+      next.push(Math.floor(Math.random() * maxIndex));
+    }
+    return next;
+  };
+
+  const flashCell = async (index) => {
+    const cell = getCell(index);
+    if (!cell) return;
+    cell.classList.add("showing");
+    await sleep(500);
+    cell.classList.remove("showing");
+    await sleep(160);
+  };
+
+  const playPattern = async () => {
+    phase = "showing";
+    lockButtons(true);
+    updateStatus("Showing pattern - watch closely.");
+    clearCellState();
+
+    for (const idx of sequence) {
+      if (phase !== "showing") break;
+      await flashCell(idx);
+    }
+
+    phase = "input";
+    userIndex = 0;
+    lockButtons(false);
+    updateStatus("Your turn: click the cells in order.");
+  };
+
+  const endRound = (success, lastIndex) => {
+    phase = "idle";
+    lockButtons(false);
+    if (success) {
+      updateStatus("Nice work! Pattern matched. Try a tougher setup or replay.");
+    } else {
+      if (typeof lastIndex === "number") {
+        const cell = getCell(lastIndex);
+        if (cell) {
+          cell.classList.add("miss");
+          setTimeout(() => cell.classList.remove("miss"), 700);
         }
-    };
-    var lockButtons = function (locked) {
-        showPatternBtn.disabled = locked;
-        resetBtn.disabled = locked && phase === "showing";
-    };
-    var generateSequence = function (length, maxIndex) {
-        var next = [];
-        for (var i = 0; i < length; i += 1) {
-            next.push(Math.floor(Math.random() * maxIndex));
-        }
-        return next;
-    };
-    var flashCell = function (index) { return __awaiter(_this, void 0, void 0, function () {
-        var cell;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    cell = getCell(index);
-                    if (!cell)
-                        return [2 /*return*/];
-                    cell.classList.add("showing");
-                    return [4 /*yield*/, sleep(520)];
-                case 1:
-                    _a.sent();
-                    cell.classList.remove("showing");
-                    return [4 /*yield*/, sleep(160)];
-                case 2:
-                    _a.sent();
-                    return [2 /*return*/];
-            }
-        });
-    }); };
-    var playPattern = function () { return __awaiter(_this, void 0, void 0, function () {
-        var _i, sequence_1, idx;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    phase = "showing";
-                    lockButtons(true);
-                    updateStatus("Showing pattern� watch closely.");
-                    clearCellState();
-                    _i = 0, sequence_1 = sequence;
-                    _a.label = 1;
-                case 1:
-                    if (!(_i < sequence_1.length)) return [3 /*break*/, 4];
-                    idx = sequence_1[_i];
-                    return [4 /*yield*/, flashCell(idx)];
-                case 2:
-                    _a.sent();
-                    _a.label = 3;
-                case 3:
-                    _i++;
-                    return [3 /*break*/, 1];
-                case 4:
-                    phase = "input";
-                    userIndex = 0;
-                    lockButtons(false);
-                    updateStatus("Your turn: click the cells in order.");
-                    return [2 /*return*/];
-            }
-        });
-    }); };
-    var endRound = function (success, lastIndex) {
-        phase = "idle";
-        lockButtons(false);
-        if (success) {
-            updateStatus("Nice work! Pattern matched. Try a tougher setup or replay.");
-        }
-        else {
-            if (typeof lastIndex === "number") {
-                var cell_1 = getCell(lastIndex);
-                if (cell_1) {
-                    cell_1.classList.add("miss");
-                    setTimeout(function () { return cell_1.classList.remove("miss"); }, 700);
-                }
-            }
-            updateStatus("That one missed. Show the pattern again to retry.");
-        }
-    };
-    var handleUserInput = function (index) {
-        if (phase !== "input")
-            return;
-        var expected = sequence[userIndex];
-        if (index === expected) {
-            var cell_2 = getCell(index);
-            if (cell_2) {
-                cell_2.classList.add("user-hit");
-                setTimeout(function () { return cell_2.classList.remove("user-hit"); }, 350);
-            }
-            userIndex += 1;
-            if (userIndex === sequence.length) {
-                endRound(true);
-            }
-            else {
-                updateStatus("Good so far: ".concat(userIndex, "/").concat(sequence.length));
-            }
-        }
-        else {
-            endRound(false, index);
-        }
-    };
-    var startRound = function () { return __awaiter(_this, void 0, void 0, function () {
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    if (phase === "showing")
-                        return [2 /*return*/];
-                    syncSettingsFromInputs();
-                    sequence = generateSequence(patternLength, gridSize * gridSize);
-                    return [4 /*yield*/, playPattern()];
-                case 1:
-                    _a.sent();
-                    return [2 /*return*/];
-            }
-        });
-    }); };
-    var reset = function () {
-        phase = "idle";
-        userIndex = 0;
-        sequence = [];
-        clearCellState();
-        lockButtons(false);
-        updateStatus("Pick settings and show a pattern to begin.");
-    };
-    gridSizeInput.addEventListener("input", function () {
-        syncSettingsFromInputs();
-        buildGrid(gridSize);
-        clearCellState();
-        updateStatus("Grid updated. Show pattern to play.");
-    });
-    patternLengthInput.addEventListener("input", function () {
-        syncSettingsFromInputs();
-    });
-    showPatternBtn.addEventListener("click", function () {
-        startRound().catch(function (err) {
-            console.error(err);
-            updateStatus("Something went wrong while showing the pattern.");
-            phase = "idle";
-            lockButtons(false);
-        });
-    });
-    resetBtn.addEventListener("click", reset);
+      }
+      updateStatus("That one missed. Show the pattern again to retry.");
+    }
+  };
+
+  const startRound = async () => {
+    if (phase === "showing") return;
+    syncSettingsFromInputs();
+    sequence = generateSequence(patternLength, gridSize * gridSize);
+    await playPattern();
+  };
+
+  const reset = () => {
+    phase = "idle";
+    userIndex = 0;
+    sequence = [];
+    clearCellState();
+    lockButtons(false);
+    updateStatus("Pick settings and show a pattern to begin.");
+  };
+
+  gridSizeInput.addEventListener("input", () => {
     syncSettingsFromInputs();
     buildGrid(gridSize);
-    updateStatus("Pick settings and show a pattern to begin.");
+    clearCellState();
+    updateStatus("Grid updated. Show pattern to play.");
+  });
+
+  patternLengthInput.addEventListener("input", () => {
+    syncSettingsFromInputs();
+  });
+
+  showPatternBtn.addEventListener("click", () => {
+    startRound().catch((err) => {
+      console.error(err);
+      updateStatus("Something went wrong while showing the pattern.");
+      phase = "idle";
+      lockButtons(false);
+    });
+  });
+
+  resetBtn.addEventListener("click", reset);
+
+  syncSettingsFromInputs();
+  buildGrid(gridSize);
+  updateStatus("Pick settings and show a pattern to begin.");
+
+  return { resetToIdle: reset };
+};
+
+const initDualNBack = () => {
+  const gridEl = document.querySelector("#nback-grid");
+  const letterEl = document.querySelector("#nback-letter");
+  const statusEl = document.querySelector("#nback-status");
+  const scoreEl = document.querySelector("#nback-score");
+  const levelInput = document.querySelector("#nback-level");
+  const speedInput = document.querySelector("#nback-speed");
+  const startBtn = document.querySelector("#nback-start");
+  const stopBtn = document.querySelector("#nback-stop");
+  const posMatchBtn = document.querySelector("#nback-pos-match");
+  const letterMatchBtn = document.querySelector("#nback-letter-match");
+
+  if (
+    !gridEl ||
+    !letterEl ||
+    !statusEl ||
+    !scoreEl ||
+    !levelInput ||
+    !speedInput ||
+    !startBtn ||
+    !stopBtn ||
+    !posMatchBtn ||
+    !letterMatchBtn
+  ) {
+    throw new Error("Required UI elements are missing for Dual N-Back.");
+  }
+
+  const letterPool = ["C", "H", "K", "L", "Q", "R", "S", "T", "V", "Z"];
+  const cells = [];
+  const positions = [];
+  const letters = [];
+
+  let nLevel = 2;
+  let speed = 2200;
+  let state = "idle";
+  let cursor = -1;
+  let turnTimer = null;
+  let flashTimer = null;
+  let posHits = 0;
+  let posTotal = 0;
+  let letterHits = 0;
+  let letterTotal = 0;
+  let lastPosGuess = -1;
+  let lastLetterGuess = -1;
+
+  const buildGrid = () => {
+    gridEl.innerHTML = "";
+    cells.splice(0, cells.length);
+
+    for (let i = 0; i < 9; i += 1) {
+      const cell = document.createElement("button");
+      cell.type = "button";
+      cell.className = "nback-cell";
+      cell.dataset.index = String(i);
+      const row = Math.floor(i / 3) + 1;
+      const col = (i % 3) + 1;
+      cell.setAttribute("aria-label", `Cell ${row}, ${col}`);
+      cells.push(cell);
+      gridEl.appendChild(cell);
+    }
+  };
+
+  const clearCellHighlights = () => {
+    cells.forEach((cell) => cell.classList.remove("nback-current", "nback-hit", "nback-miss"));
+  };
+
+  const renderScore = () => {
+    scoreEl.textContent = `Position: ${posHits}/${posTotal} | Letter: ${letterHits}/${letterTotal}`;
+  };
+
+  const updateStatus = (text) => {
+    statusEl.textContent = text;
+  };
+
+  const syncSettings = () => {
+    const parsedLevel = Number.parseInt(levelInput.value, 10);
+    nLevel = clamp(Number.isNaN(parsedLevel) ? 2 : parsedLevel, 1, 4);
+    levelInput.value = String(nLevel);
+
+    const parsedSpeed = Number.parseInt(speedInput.value, 10);
+    speed = clamp(Number.isNaN(parsedSpeed) ? 2200 : parsedSpeed, 1000, 5000);
+    speedInput.value = String(speed);
+  };
+
+  const flashLetterFeedback = (className) => {
+    letterEl.classList.remove("flash-hit", "flash-miss");
+    letterEl.classList.add(className);
+    setTimeout(() => letterEl.classList.remove(className), 420);
+  };
+
+  const showStimulus = (position, letter) => {
+    clearCellHighlights();
+    const cell = cells[position];
+    if (cell) {
+      cell.classList.add("nback-current");
+    }
+    letterEl.textContent = letter;
+
+    if (flashTimer !== null) {
+      window.clearTimeout(flashTimer);
+    }
+    const offDelay = clamp(speed - 400, 500, 1400);
+    flashTimer = window.setTimeout(() => {
+      clearCellHighlights();
+    }, offDelay);
+  };
+
+  const stop = (message = "Stream stopped.") => {
+    state = "idle";
+    if (turnTimer !== null) {
+      window.clearTimeout(turnTimer);
+      turnTimer = null;
+    }
+    if (flashTimer !== null) {
+      window.clearTimeout(flashTimer);
+      flashTimer = null;
+    }
+    clearCellHighlights();
+    letterEl.textContent = "-";
+    lastLetterGuess = -1;
+    lastPosGuess = -1;
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+    updateStatus(message);
+  };
+
+  const runTurn = () => {
+    if (state !== "running") return;
+
+    syncSettings();
+    cursor += 1;
+    const position = Math.floor(Math.random() * 9);
+    const letter = letterPool[Math.floor(Math.random() * letterPool.length)];
+    positions[cursor] = position;
+    letters[cursor] = letter;
+    lastPosGuess = -1;
+    lastLetterGuess = -1;
+
+    showStimulus(position, letter);
+    updateStatus(`Turn ${cursor + 1}. Watch for ${nLevel}-back matches.`);
+
+    turnTimer = window.setTimeout(runTurn, speed);
+  };
+
+  const start = () => {
+    if (state === "running") return;
+    syncSettings();
+    positions.length = 0;
+    letters.length = 0;
+    cursor = -1;
+    posHits = 0;
+    posTotal = 0;
+    letterHits = 0;
+    letterTotal = 0;
+    lastPosGuess = -1;
+    lastLetterGuess = -1;
+    renderScore();
+    state = "running";
+    startBtn.disabled = true;
+    stopBtn.disabled = false;
+    updateStatus(`Streaming cues with ${nLevel}-back.`);
+    runTurn();
+  };
+
+  const handleGuess = (type) => {
+    if (state !== "running") {
+      updateStatus("Start the stream first.");
+      return;
+    }
+
+    if (cursor < nLevel) {
+      updateStatus(`Need at least ${nLevel} cues before guessing.`);
+      return;
+    }
+
+    if (type === "pos" && lastPosGuess === cursor) {
+      updateStatus("You already answered position this turn.");
+      return;
+    }
+    if (type === "letter" && lastLetterGuess === cursor) {
+      updateStatus("You already answered letter this turn.");
+      return;
+    }
+
+    const checkIndex = cursor - nLevel;
+    if (type === "pos") {
+      posTotal += 1;
+      const isHit = positions[cursor] === positions[checkIndex];
+      lastPosGuess = cursor;
+      if (isHit) {
+        posHits += 1;
+        const cell = cells[positions[cursor]];
+        if (cell) cell.classList.add("nback-hit");
+        updateStatus("Position match!");
+      } else {
+        const cell = cells[positions[cursor]];
+        if (cell) cell.classList.add("nback-miss");
+        updateStatus("No position match that time.");
+      }
+      window.setTimeout(clearCellHighlights, 420);
+    } else {
+      letterTotal += 1;
+      const isHit = letters[cursor] === letters[checkIndex];
+      lastLetterGuess = cursor;
+      flashLetterFeedback(isHit ? "flash-hit" : "flash-miss");
+      updateStatus(isHit ? "Letter match!" : "No letter match that time.");
+      if (isHit) {
+        letterHits += 1;
+      }
+    }
+
+    renderScore();
+  };
+
+  buildGrid();
+  renderScore();
+  stopBtn.disabled = true;
+
+  levelInput.addEventListener("input", syncSettings);
+  speedInput.addEventListener("input", syncSettings);
+  startBtn.addEventListener("click", start);
+  stopBtn.addEventListener("click", () => stop("Stream paused."));
+  posMatchBtn.addEventListener("click", () => handleGuess("pos"));
+  letterMatchBtn.addEventListener("click", () => handleGuess("letter"));
+
+  return { stop, isRunning: () => state === "running" };
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+  const heroTitleEl = document.querySelector("#hero-game-title");
+  const heroSubEl = document.querySelector("#hero-game-sub");
+  const switchTitleEl = document.querySelector("#switch-title");
+  const switchSubEl = document.querySelector("#switch-sub");
+  const prevBtn = document.querySelector("#game-prev");
+  const nextBtn = document.querySelector("#game-next");
+  const gamePanels = Array.from(document.querySelectorAll(".game-panel"));
+
+  const memoryGame = initMemoryTester();
+  const dualNBack = initDualNBack();
+
+  const games = [
+    { id: "memory", title: "Memory Tester", description: "Sequence recall on a custom grid." },
+    { id: "nback", title: "Dual N-Back", description: "Track positions and letters N steps back." },
+  ];
+
+  let activeIndex = 0;
+
+  const setActiveGame = (index) => {
+    activeIndex = (index + games.length) % games.length;
+    const meta = games[activeIndex];
+    gamePanels.forEach((panel) => {
+      const isActive = panel.dataset.gameId === meta.id;
+      panel.classList.toggle("active", isActive);
+    });
+
+    if (heroTitleEl) heroTitleEl.textContent = meta.title;
+    if (heroSubEl) heroSubEl.textContent = meta.description;
+    if (switchTitleEl) switchTitleEl.textContent = meta.title;
+    if (switchSubEl) switchSubEl.textContent = meta.description;
+
+    if (meta.id === "memory") {
+      if (dualNBack.isRunning()) {
+        dualNBack.stop("Switched to Memory Tester. Stream paused.");
+      }
+    } else {
+      memoryGame.resetToIdle();
+    }
+  };
+
+  const gameLinks = Array.from(document.querySelectorAll("[data-game-target]"));
+  gameLinks.forEach((link) => {
+    link.addEventListener("click", (event) => {
+      const target = event.currentTarget.dataset.gameTarget;
+      if (!target) return;
+      event.preventDefault();
+      const targetIndex = games.findIndex((game) => game.id === target);
+      if (targetIndex !== -1) {
+        setActiveGame(targetIndex);
+        const section = document.querySelector(`.game-panel[data-game-id=\"${target}\"]`);
+        section?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    });
+  });
+
+  prevBtn?.addEventListener("click", () => setActiveGame(activeIndex - 1));
+  nextBtn?.addEventListener("click", () => setActiveGame(activeIndex + 1));
+
+  setActiveGame(0);
 });
