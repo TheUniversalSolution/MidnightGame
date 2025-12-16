@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mini Games | Memory Tester</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="logo">Mini Games</div>
+    <nav class="site-nav">
+      <a href="#memory-tester">Memory Tester</a>
+    </nav>
+  </header>
+
+  <main class="page">
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Browser games</p>
+        <h1>Test your recall with the Memory Tester</h1>
+        <p class="lede">Pick a grid size, watch a pattern flash, then click the sequence back. Start simple or stretch to tougher layouts.</p>
+        <div class="cta-row">
+          <a class="cta" href="#memory-tester">Play now</a>
+          <span class="hint">More games can plug into this shell later.</span>
+        </div>
+      </div>
+      <div class="hero-card">
+        <p class="hero-label">Current game</p>
+        <p class="hero-title">Memory Tester</p>
+        <p class="hero-sub">Sequence recall on a custom grid.</p>
+      </div>
+    </section>
+
+    <section id="memory-tester" class="card">
+      <header class="card-header">
+        <div>
+          <p class="eyebrow">Game 01</p>
+          <h2>Memory Tester</h2>
+        </div>
+        <p class="status" id="status">Pick settings and show a pattern to begin.</p>
+      </header>
+
+      <form class="controls" id="controls" autocomplete="off">
+        <label class="control">
+          <span>Grid size (x by x)</span>
+          <input type="number" id="grid-size" name="grid-size" min="2" max="8" value="4" required />
+        </label>
+        <label class="control">
+          <span>Pattern length</span>
+          <input type="number" id="pattern-length" name="pattern-length" min="2" max="16" value="5" required />
+        </label>
+        <div class="control actions">
+          <button type="button" id="show-pattern">Show pattern</button>
+          <button type="button" id="reset">Reset</button>
+        </div>
+      </form>
+
+      <div class="grid-shell">
+        <div id="grid" class="grid" role="grid" aria-label="Memory grid"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>More mini games coming soon.</p>
+  </footer>
+
+  <script type="module" src="./start.js"></script>
+</body>
+</html>
