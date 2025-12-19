@@ -3,36 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mini Games | Memory & Dual N-Back</title>
+  <title>Brain Workout | Memory, Dual N-Back & Digits</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="site-header">
-    <div class="logo">Mini Games</div>
-    <nav class="site-nav">
-      <a href="#games">Games</a>
-      <a href="#dual-n-back" data-game-target="nback">Dual N-Back</a>
-    </nav>
+    <div class="logo">Brain Workout</div>
+    <label class="game-select">
+      <span>Games</span>
+      <select id="game-select" aria-label="Select a game">
+        <option value="memory">Memory Tester</option>
+        <option value="nback">Dual N-Back</option>
+        <option value="digits">Digit Order</option>
+      </select>
+    </label>
   </header>
 
   <main class="page">
-    <section class="hero">
-      <div>
-        <p class="eyebrow">Browser games</p>
-        <h1>Sharpen your working memory</h1>
-        <p class="lede">Bounce between quick exercises: the original Memory Tester and a new Dual N-Back stream. Tune the difficulty and chase clean streaks.</p>
-        <div class="cta-row">
-          <a class="cta" href="#games">Choose a game</a>
-          <span class="hint">Use the arrows to flip between modes.</span>
-        </div>
-      </div>
-      <div class="hero-card">
-        <p class="hero-label">Current game</p>
-        <p class="hero-title" id="hero-game-title">Memory Tester</p>
-        <p class="hero-sub" id="hero-game-sub">Sequence recall on a custom grid.</p>
-      </div>
-    </section>
-
     <section id="games" class="card game-switcher">
       <button type="button" class="switch-btn" id="game-prev" aria-label="Previous game">&#8592;</button>
       <div class="switcher-copy">
@@ -49,7 +36,10 @@
           <p class="eyebrow">Game 01</p>
           <h2>Memory Tester</h2>
         </div>
-        <p class="status" id="status">Pick settings and show a pattern to begin.</p>
+        <div class="card-meta">
+          <p class="status" id="status">Pick settings and show a pattern to begin.</p>
+          <button type="button" class="fullscreen-btn" data-fullscreen-target="memory-tester">Full screen</button>
+        </div>
       </header>
 
       <form class="controls" id="controls" autocomplete="off">
@@ -78,7 +68,10 @@
           <p class="eyebrow">Game 02</p>
           <h2>Dual N-Back</h2>
         </div>
-        <p class="status" id="nback-status">Pick N and hit start to begin.</p>
+        <div class="card-meta">
+          <p class="status" id="nback-status">Pick N and hit start to begin.</p>
+          <button type="button" class="fullscreen-btn" data-fullscreen-target="dual-n-back">Full screen</button>
+        </div>
       </header>
 
       <form class="controls" id="nback-controls" autocomplete="off">
@@ -112,14 +105,44 @@
             <button type="button" id="nback-letter-match">Letter match</button>
           </div>
           <div class="nback-score" id="nback-score">Position: 0/0 | Letter: 0/0</div>
+          <div class="nback-missed" id="nback-missed">Missed: none yet.</div>
         </div>
       </div>
     </section>
-  </main>
 
-  <footer class="site-footer">
-    <p>More mini games coming soon.</p>
-  </footer>
+    <section id="digit-order" class="card game-panel" data-game-id="digits">
+      <header class="card-header">
+        <div>
+          <p class="eyebrow">Game 03</p>
+          <h2>Digit Order</h2>
+        </div>
+        <div class="card-meta">
+          <p class="status" id="digit-status">Pick your settings and start the round.</p>
+          <button type="button" class="fullscreen-btn" data-fullscreen-target="digit-order">Full screen</button>
+        </div>
+      </header>
+
+      <form class="controls" id="digit-controls" autocomplete="off">
+        <label class="control">
+          <span>Numbers (n)</span>
+          <input type="number" id="digit-count" name="digit-count" min="3" max="20" value="8" required />
+        </label>
+        <label class="control">
+          <span>Reveal time (ms)</span>
+          <input type="number" id="digit-reveal" name="digit-reveal" min="500" max="6000" step="100" value="1600" required />
+        </label>
+        <div class="control actions">
+          <button type="button" id="digit-start">Start</button>
+          <button type="button" id="digit-reset">Reset</button>
+        </div>
+      </form>
+
+      <div class="digit-shell">
+        <div id="digit-field" class="digit-field" role="application" aria-label="Digit order board"></div>
+      </div>
+      <p class="hint">Tap the cards in ascending order after they flip.</p>
+    </section>
+  </main>
 
   <script type="module" src="./start.js"></script>
 </body>

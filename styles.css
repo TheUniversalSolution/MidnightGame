@@ -52,8 +52,36 @@ a:hover {
   letter-spacing: 0.02em;
 }
 
-.site-nav a + a {
-  margin-left: 14px;
+.game-select {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  align-items: flex-end;
+  text-align: right;
+}
+
+.game-select select {
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: none;
+  background: rgba(15, 19, 32, 0.6);
+  color: var(--text);
+  font-size: 14px;
+  text-transform: none;
+}
+
+.game-select select:focus {
+  outline: 1px solid var(--accent);
+}
+
+.game-select option {
+  background: #0f1320;
+  color: var(--text);
+  border: none;
 }
 
 .page {
@@ -197,6 +225,13 @@ a:hover {
   gap: 16px;
 }
 
+.card-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
 .card h2 {
   margin: 0;
 }
@@ -205,6 +240,24 @@ a:hover {
   color: var(--muted);
   font-size: 14px;
   text-align: right;
+}
+
+.fullscreen-btn {
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #0f1320;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: border-color 120ms ease, transform 120ms ease, box-shadow 120ms ease;
+}
+
+.fullscreen-btn:hover {
+  border-color: var(--accent-2);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow);
 }
 
 .controls {
@@ -266,6 +319,8 @@ a:hover {
   background: #0f1320;
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  width: min(100%, 360px);
+  margin: 0 auto;
 }
 
 .grid {
@@ -412,12 +467,111 @@ a:hover {
   font-size: 14px;
 }
 
-.site-footer {
-  text-align: center;
+.nback-missed {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #0f1320;
+  border: 1px solid var(--border);
   color: var(--muted);
-  padding: 20px;
-  border-top: 1px solid var(--border);
-  margin-top: 24px;
+  font-size: 13px;
+}
+
+.digit-shell {
+  padding: 14px;
+  background: #0f1320;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  width: min(100%, 420px);
+  margin: 0 auto;
+}
+
+.digit-field {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+}
+
+.digit-card {
+  position: absolute;
+  width: var(--digit-size, 52px);
+  height: var(--digit-size, 52px);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #0b0e18;
+  color: var(--text);
+  font-weight: 700;
+  font-size: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 120ms ease, border-color 120ms ease, background 120ms ease, color 120ms ease;
+}
+
+.digit-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.digit-card.flipped {
+  background: #0f1320;
+  color: transparent;
+}
+
+.digit-card.correct {
+  background: var(--accent-2);
+  color: #0b1c15;
+  border-color: var(--accent-2);
+}
+
+.digit-card.wrong {
+  background: var(--danger);
+  color: #0b1c15;
+  border-color: var(--danger);
+}
+
+.game-panel:fullscreen {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+  background: var(--bg);
+  overflow: auto;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+
+.game-panel:fullscreen .card-header,
+.game-panel:fullscreen .controls,
+.game-panel:fullscreen .nback-layout {
+  width: min(100%, 980px);
+}
+
+.game-panel:fullscreen .grid-shell,
+.game-panel:fullscreen .digit-shell {
+  width: min(100%, 680px);
+}
+
+.game-panel:fullscreen .nback-grid-shell {
+  width: 100%;
+}
+
+.game-panel:fullscreen .cell {
+  font-size: 18px;
+}
+
+.game-panel:fullscreen .digit-card {
+  font-size: 18px;
+}
+
+.game-panel:fullscreen .nback-letter {
+  font-size: 40px;
 }
 
 @media (max-width: 800px) {
@@ -428,6 +582,11 @@ a:hover {
   .card-header {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .card-meta {
+    align-items: flex-start;
+    width: 100%;
   }
 
   .status {

@@ -2,7 +2,8 @@
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
 type Phase = "idle" | "showing" | "input";
-type GameId = "memory" | "nback";
+type DigitPhase = "idle" | "showing" | "input";
+type GameId = "memory" | "nback" | "digits";
 type NBackState = "idle" | "running";
 
 const initMemoryTester = () => {
@@ -192,6 +193,7 @@ const initDualNBack = () => {
   const letterEl = document.querySelector<HTMLParagraphElement>("#nback-letter");
   const statusEl = document.querySelector<HTMLParagraphElement>("#nback-status");
   const scoreEl = document.querySelector<HTMLDivElement>("#nback-score");
+  const missedEl = document.querySelector<HTMLDivElement>("#nback-missed");
   const levelInput = document.querySelector<HTMLInputElement>("#nback-level");
   const speedInput = document.querySelector<HTMLInputElement>("#nback-speed");
   const startBtn = document.querySelector<HTMLButtonElement>("#nback-start");
@@ -204,6 +206,7 @@ const initDualNBack = () => {
     !letterEl ||
     !statusEl ||
     !scoreEl ||
+    !missedEl ||
     !levelInput ||
     !speedInput ||
     !startBtn ||
@@ -218,6 +221,11 @@ const initDualNBack = () => {
   const cells: HTMLButtonElement[] = [];
   const positions: number[] = [];
   const letters: string[] = [];
+  const posMatchByTurn: boolean[] = [];
+  const letterMatchByTurn: boolean[] = [];
+  const posResponded: boolean[] = [];
+  const letterResponded: boolean[] = [];
+  const missedMatches: Array<{ turn: number; type: "position" | "letter"; detail: string }> = [];
 
   let nLevel = 2;
   let speed = 2200;
@@ -226,11 +234,9 @@ const initDualNBack = () => {
   let turnTimer: number | null = null;
   let flashTimer: number | null = null;
   let posHits = 0;
-  let posTotal = 0;
+  let posOpportunities = 0;
   let letterHits = 0;
-  let letterTotal = 0;
-  let lastPosGuess = -1;
-  let lastLetterGuess = -1;
+  let letterOpportunities = 0;
 
   const buildGrid = () => {
     gridEl.innerHTML = "";
@@ -254,11 +260,40 @@ const initDualNBack = () => {
   };
 
   const renderScore = () => {
-    scoreEl.textContent = `Position: ${posHits}/${posTotal} | Letter: ${letterHits}/${letterTotal}`;
+    scoreEl.textContent = `Position: ${posHits}/${posOpportunities} | Letter: ${letterHits}/${letterOpportunities}`;
   };
 
   const updateStatus = (text: string) => {
     statusEl.textContent = text;
+  };
+
+  const updateMissed = () => {
+    if (missedMatches.length === 0) {
+      missedEl.textContent = "Missed: none yet.";
+      return;
+    }
+    const recent = missedMatches.slice(-4).map((item) => item.detail);
+    missedEl.textContent = `Missed: ${recent.join(" | ")}`;
+  };
+
+  const formatPosition = (pos: number) => {
+    const row = Math.floor(pos / 3) + 1;
+    const col = (pos % 3) + 1;
+    return `r${row}c${col}`;
+  };
+
+  const finalizeTurn = (turnIndex: number) => {
+    if (posMatchByTurn[turnIndex] && !posResponded[turnIndex]) {
+      const detail = `Pos T${turnIndex + 1} ${formatPosition(positions[turnIndex])}`;
+      missedMatches.push({ turn: turnIndex + 1, type: "position", detail });
+    }
+
+    if (letterMatchByTurn[turnIndex] && !letterResponded[turnIndex]) {
+      const detail = `Letter T${turnIndex + 1} ${letters[turnIndex]}`;
+      missedMatches.push({ turn: turnIndex + 1, type: "letter", detail });
+    }
+
+    updateMissed();
   };
 
   const syncSettings = () => {
@@ -295,6 +330,9 @@ const initDualNBack = () => {
   };
 
   const stop = (message = "Stream stopped.") => {
+    if (state === "running") {
+      finalizeTurn(cursor);
+    }
     state = "idle";
     if (turnTimer !== null) {
       window.clearTimeout(turnTimer);
@@ -306,8 +344,6 @@ const initDualNBack = () => {
     }
     clearCellHighlights();
     letterEl.textContent = "-";
-    lastLetterGuess = -1;
-    lastPosGuess = -1;
     startBtn.disabled = false;
     stopBtn.disabled = true;
     updateStatus(message);
@@ -317,16 +353,30 @@ const initDualNBack = () => {
     if (state !== "running") return;
 
     syncSettings();
+    if (cursor >= 0) {
+      finalizeTurn(cursor);
+    }
     cursor += 1;
     const position = Math.floor(Math.random() * 9);
     const letter = letterPool[Math.floor(Math.random() * letterPool.length)];
     positions[cursor] = position;
     letters[cursor] = letter;
-    lastPosGuess = -1;
-    lastLetterGuess = -1;
+    posResponded[cursor] = false;
+    letterResponded[cursor] = false;
+    const posMatch = cursor >= nLevel && position === positions[cursor - nLevel];
+    const letterMatch = cursor >= nLevel && letter === letters[cursor - nLevel];
+    posMatchByTurn[cursor] = posMatch;
+    letterMatchByTurn[cursor] = letterMatch;
+    if (posMatch) {
+      posOpportunities += 1;
+    }
+    if (letterMatch) {
+      letterOpportunities += 1;
+    }
 
     showStimulus(position, letter);
     updateStatus(`Turn ${cursor + 1}. Watch for ${nLevel}-back matches.`);
+    renderScore();
 
     turnTimer = window.setTimeout(runTurn, speed);
   };
@@ -336,14 +386,18 @@ const initDualNBack = () => {
     syncSettings();
     positions.length = 0;
     letters.length = 0;
+    posMatchByTurn.length = 0;
+    letterMatchByTurn.length = 0;
+    posResponded.length = 0;
+    letterResponded.length = 0;
+    missedMatches.length = 0;
     cursor = -1;
     posHits = 0;
-    posTotal = 0;
+    posOpportunities = 0;
     letterHits = 0;
-    letterTotal = 0;
-    lastPosGuess = -1;
-    lastLetterGuess = -1;
+    letterOpportunities = 0;
     renderScore();
+    updateMissed();
     state = "running";
     startBtn.disabled = true;
     stopBtn.disabled = false;
@@ -362,20 +416,18 @@ const initDualNBack = () => {
       return;
     }
 
-    if (type === "pos" && lastPosGuess === cursor) {
+    if (type === "pos" && posResponded[cursor]) {
       updateStatus("You already answered position this turn.");
       return;
     }
-    if (type === "letter" && lastLetterGuess === cursor) {
+    if (type === "letter" && letterResponded[cursor]) {
       updateStatus("You already answered letter this turn.");
       return;
     }
 
-    const checkIndex = cursor - nLevel;
     if (type === "pos") {
-      posTotal += 1;
-      const isHit = positions[cursor] === positions[checkIndex];
-      lastPosGuess = cursor;
+      const isHit = posMatchByTurn[cursor];
+      posResponded[cursor] = true;
       if (isHit) {
         posHits += 1;
         const cell = cells[positions[cursor]];
@@ -388,9 +440,8 @@ const initDualNBack = () => {
       }
       window.setTimeout(clearCellHighlights, 420);
     } else {
-      letterTotal += 1;
-      const isHit = letters[cursor] === letters[checkIndex];
-      lastLetterGuess = cursor;
+      const isHit = letterMatchByTurn[cursor];
+      letterResponded[cursor] = true;
       flashLetterFeedback(isHit ? "flash-hit" : "flash-miss");
       updateStatus(isHit ? "Letter match!" : "No letter match that time.");
       if (isHit) {
@@ -415,6 +466,199 @@ const initDualNBack = () => {
   return { stop, isRunning: () => state === "running" };
 };
 
+const initDigitOrder = () => {
+  const countInput = document.querySelector<HTMLInputElement>("#digit-count");
+  const revealInput = document.querySelector<HTMLInputElement>("#digit-reveal");
+  const startBtn = document.querySelector<HTMLButtonElement>("#digit-start");
+  const resetBtn = document.querySelector<HTMLButtonElement>("#digit-reset");
+  const fieldEl = document.querySelector<HTMLDivElement>("#digit-field");
+  const statusEl = document.querySelector<HTMLParagraphElement>("#digit-status");
+
+  if (!countInput || !revealInput || !startBtn || !resetBtn || !fieldEl || !statusEl) {
+    throw new Error("Required UI elements are missing for Digit Order.");
+  }
+
+  let count = 8;
+  let revealMs = 1600;
+  let phase: DigitPhase = "idle";
+  let expected = 1;
+  let revealTimer: number | null = null;
+
+  const updateStatus = (text: string) => {
+    statusEl.textContent = text;
+  };
+
+  const syncSettings = () => {
+    const parsedCount = Number.parseInt(countInput.value, 10);
+    count = clamp(Number.isNaN(parsedCount) ? 8 : parsedCount, 3, 20);
+    countInput.value = String(count);
+
+    const parsedReveal = Number.parseInt(revealInput.value, 10);
+    revealMs = clamp(Number.isNaN(parsedReveal) ? 1600 : parsedReveal, 500, 6000);
+    revealInput.value = String(revealMs);
+  };
+
+  const clearTimer = () => {
+    if (revealTimer !== null) {
+      window.clearTimeout(revealTimer);
+      revealTimer = null;
+    }
+  };
+
+  const resetBoard = () => {
+    clearTimer();
+    fieldEl.innerHTML = "";
+    expected = 1;
+    phase = "idle";
+  };
+
+  const shuffle = <T>(items: T[]) => {
+    for (let i = items.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [items[i], items[j]] = [items[j], items[i]];
+    }
+    return items;
+  };
+
+  const getFieldBounds = () => {
+    const rect = fieldEl.getBoundingClientRect();
+    const side = Math.max(0, Math.min(rect.width, rect.height));
+    if (side === 0) {
+      return { width: 320, height: 320 };
+    }
+    return { width: rect.width, height: rect.height };
+  };
+
+  const placeCards = (cardSize: number) => {
+    const { width, height } = getFieldBounds();
+    const padding = 6;
+    const maxX = width - cardSize - padding;
+    const maxY = height - cardSize - padding;
+    if (maxX <= padding || maxY <= padding) return null;
+
+    const placed: Array<{ x: number; y: number }> = [];
+    const gap = 8;
+
+    for (let i = 0; i < count; i += 1) {
+      let next: { x: number; y: number } | null = null;
+      for (let attempt = 0; attempt < 220; attempt += 1) {
+        const x = padding + Math.random() * (maxX - padding);
+        const y = padding + Math.random() * (maxY - padding);
+        const overlap = placed.some(
+          (rect) =>
+            !(x + cardSize + gap <= rect.x ||
+              rect.x + cardSize + gap <= x ||
+              y + cardSize + gap <= rect.y ||
+              rect.y + cardSize + gap <= y),
+        );
+        if (!overlap) {
+          next = { x, y };
+          break;
+        }
+      }
+      if (!next) return null;
+      placed.push(next);
+    }
+
+    return placed;
+  };
+
+  const handleCardClick = (card: HTMLButtonElement, value: number) => {
+    if (phase !== "input") return;
+
+    card.classList.remove("flipped");
+    if (value === expected) {
+      card.classList.add("correct");
+      card.disabled = true;
+      expected += 1;
+      if (expected > count) {
+        phase = "idle";
+        updateStatus("Nice run! Want another round?");
+      } else {
+        updateStatus(`Good. Find ${expected} next.`);
+      }
+    } else {
+      card.classList.add("wrong");
+      updateStatus(`Missed. Expected ${expected}.`);
+      setTimeout(() => card.classList.remove("wrong"), 420);
+    }
+  };
+
+  const buildBoard = () => {
+    fieldEl.innerHTML = "";
+    const { width, height } = getFieldBounds();
+    const grid = Math.ceil(Math.sqrt(count));
+    let size = clamp(Math.floor(Math.min(width, height) / grid) - 10, 34, 76);
+    let positions = placeCards(size);
+    let attempts = 0;
+    while (!positions && attempts < 5) {
+      size = Math.max(30, size - 6);
+      positions = placeCards(size);
+      attempts += 1;
+    }
+
+    if (!positions) {
+      positions = [];
+      const gap = 10;
+      size = clamp(Math.floor((Math.min(width, height) - gap * (grid + 1)) / grid), 28, 68);
+      for (let i = 0; i < count; i += 1) {
+        const row = Math.floor(i / grid);
+        const col = i % grid;
+        positions.push({ x: gap + col * (size + gap), y: gap + row * (size + gap) });
+      }
+    }
+
+    fieldEl.style.setProperty("--digit-size", `${size}px`);
+    const numbers = shuffle(Array.from({ length: count }, (_, idx) => idx + 1));
+    positions.forEach((pos, index) => {
+      const value = numbers[index];
+      const card = document.createElement("button");
+      card.type = "button";
+      card.className = "digit-card";
+      card.textContent = String(value);
+      card.dataset.value = String(value);
+      card.style.left = `${pos.x}px`;
+      card.style.top = `${pos.y}px`;
+      card.setAttribute("aria-label", `Digit ${value}`);
+      card.addEventListener("click", () => handleCardClick(card, value));
+      fieldEl.appendChild(card);
+    });
+  };
+
+  const startRound = () => {
+    syncSettings();
+    resetBoard();
+    buildBoard();
+    if (!fieldEl.children.length) {
+      updateStatus("Unable to build the board. Resize and try again.");
+      return;
+    }
+    phase = "showing";
+    updateStatus("Memorize the positions.");
+    revealTimer = window.setTimeout(() => {
+      const cards = fieldEl.querySelectorAll<HTMLButtonElement>(".digit-card");
+      cards.forEach((card) => card.classList.add("flipped"));
+      phase = "input";
+      updateStatus(`Find ${expected} to begin.`);
+    }, revealMs);
+  };
+
+  const reset = () => {
+    resetBoard();
+    updateStatus("Pick your settings and start the round.");
+  };
+
+  countInput.addEventListener("input", syncSettings);
+  revealInput.addEventListener("input", syncSettings);
+  startBtn.addEventListener("click", startRound);
+  resetBtn.addEventListener("click", reset);
+
+  syncSettings();
+  updateStatus("Pick your settings and start the round.");
+
+  return { resetToIdle: reset };
+};
+
 document.addEventListener("DOMContentLoaded", () => {
   const heroTitleEl = document.querySelector<HTMLElement>("#hero-game-title");
   const heroSubEl = document.querySelector<HTMLElement>("#hero-game-sub");
@@ -422,14 +666,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const switchSubEl = document.querySelector<HTMLElement>("#switch-sub");
   const prevBtn = document.querySelector<HTMLButtonElement>("#game-prev");
   const nextBtn = document.querySelector<HTMLButtonElement>("#game-next");
+  const gameSelect = document.querySelector<HTMLSelectElement>("#game-select");
   const gamePanels = Array.from(document.querySelectorAll<HTMLElement>(".game-panel"));
 
   const memoryGame = initMemoryTester();
   const dualNBack = initDualNBack();
+  const digitOrder = initDigitOrder();
 
   const games: Array<{ id: GameId; title: string; description: string }> = [
     { id: "memory", title: "Memory Tester", description: "Sequence recall on a custom grid." },
     { id: "nback", title: "Dual N-Back", description: "Track positions and letters N steps back." },
+    { id: "digits", title: "Digit Order", description: "Memorize the digits, then tap them in order." },
   ];
 
   let activeIndex = 0;
@@ -446,33 +693,73 @@ document.addEventListener("DOMContentLoaded", () => {
     if (heroSubEl) heroSubEl.textContent = meta.description;
     if (switchTitleEl) switchTitleEl.textContent = meta.title;
     if (switchSubEl) switchSubEl.textContent = meta.description;
+    if (gameSelect) gameSelect.value = meta.id;
 
-    if (meta.id === "memory") {
-      if (dualNBack.isRunning()) {
-        dualNBack.stop("Switched to Memory Tester. Stream paused.");
-      }
-    } else {
+    if (meta.id !== "nback" && dualNBack.isRunning()) {
+      dualNBack.stop("Switched games. Stream paused.");
+    }
+    if (meta.id !== "memory") {
       memoryGame.resetToIdle();
+    }
+    if (meta.id !== "digits") {
+      digitOrder.resetToIdle();
     }
   };
 
-  const gameLinks = Array.from(document.querySelectorAll<HTMLElement>("[data-game-target]"));
-  gameLinks.forEach((link) => {
-    link.addEventListener("click", (event) => {
-      const target = (event.currentTarget as HTMLElement).dataset.gameTarget as GameId | undefined;
-      if (!target) return;
-      event.preventDefault();
-      const targetIndex = games.findIndex((game) => game.id === target);
-      if (targetIndex !== -1) {
-        setActiveGame(targetIndex);
-        const section = document.querySelector<HTMLElement>(`.game-panel[data-game-id=\"${target}\"]`);
-        section?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-    });
+  gameSelect?.addEventListener("change", (event) => {
+    const target = (event.currentTarget as HTMLSelectElement).value as GameId;
+    const targetIndex = games.findIndex((game) => game.id === target);
+    if (targetIndex !== -1) {
+      setActiveGame(targetIndex);
+      const section = document.querySelector<HTMLElement>(`.game-panel[data-game-id=\"${target}\"]`);
+      section?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   });
 
   prevBtn?.addEventListener("click", () => setActiveGame(activeIndex - 1));
   nextBtn?.addEventListener("click", () => setActiveGame(activeIndex + 1));
+
+  const fullscreenButtons = Array.from(
+    document.querySelectorAll<HTMLButtonElement>("[data-fullscreen-target]"),
+  );
+
+  const updateFullscreenButtons = () => {
+    fullscreenButtons.forEach((btn) => {
+      const targetId = btn.dataset.fullscreenTarget;
+      if (!targetId) return;
+      const target = document.getElementById(targetId);
+      const isActive = target ? document.fullscreenElement === target : false;
+      btn.textContent = isActive ? "Exit full screen" : "Full screen";
+    });
+  };
+
+  const toggleFullscreen = (targetId: string) => {
+    const target = document.getElementById(targetId);
+    if (!target) return;
+    if (document.fullscreenElement === target) {
+      document.exitFullscreen().catch((err) => console.error(err));
+      return;
+    }
+    if (document.fullscreenElement) {
+      document
+        .exitFullscreen()
+        .then(() => target.requestFullscreen())
+        .catch((err) => console.error(err));
+      return;
+    }
+    target.requestFullscreen().catch((err) => console.error(err));
+  };
+
+  fullscreenButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const targetId = btn.dataset.fullscreenTarget;
+      if (!targetId) return;
+      toggleFullscreen(targetId);
+    });
+  });
+
+  document.addEventListener("fullscreenchange", updateFullscreenButtons);
+  updateFullscreenButtons();
 
   setActiveGame(0);
 });
