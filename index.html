@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Brain Workout | Memory, Dual N-Back & Digits</title>
+  <title>Brain Workout | Cognitive Games</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -15,6 +15,10 @@
         <option value="memory">Memory Tester</option>
         <option value="nback">Dual N-Back</option>
         <option value="digits">Digit Order</option>
+        <option value="reaction">Reaction Inhibition</option>
+        <option value="pattern">Pattern Completion</option>
+        <option value="rotation">Mental Rotation Snap</option>
+        <option value="juggle">Dual Task Juggle</option>
       </select>
     </label>
   </header>
@@ -41,7 +45,7 @@
           <button type="button" class="fullscreen-btn" data-fullscreen-target="memory-tester">Full screen</button>
         </div>
       </header>
-
+      
       <form class="controls" id="controls" autocomplete="off">
         <label class="control">
           <span>Grid size (x by x)</span>
@@ -141,6 +145,152 @@
         <div id="digit-field" class="digit-field" role="application" aria-label="Digit order board"></div>
       </div>
       <p class="hint">Tap the cards in ascending order after they flip.</p>
+    </section>
+
+    <section id="reaction-inhibition" class="card game-panel" data-game-id="reaction">
+      <header class="card-header">
+        <div>
+          <p class="eyebrow">Game 04</p>
+          <h2>Reaction Inhibition</h2>
+        </div>
+        <div class="card-meta">
+          <p class="status" id="reaction-status">Ready when you are.</p>
+          <button type="button" class="fullscreen-btn" data-fullscreen-target="reaction-inhibition">Full screen</button>
+        </div>
+      </header>
+
+      <form class="controls" id="reaction-controls" autocomplete="off">
+        <label class="control">
+          <span>Rounds</span>
+          <input type="number" id="reaction-rounds" name="reaction-rounds" min="6" max="40" value="16" required />
+        </label>
+        <label class="control">
+          <span>Stop chance (%)</span>
+          <input type="number" id="reaction-stop" name="reaction-stop" min="10" max="60" value="30" required />
+        </label>
+        <label class="control">
+          <span>Response window (ms)</span>
+          <input type="number" id="reaction-window" name="reaction-window" min="400" max="1400" step="50" value="850" required />
+        </label>
+        <div class="control actions">
+          <button type="button" id="reaction-start">Start</button>
+          <button type="button" id="reaction-reset">Reset</button>
+        </div>
+      </form>
+
+      <div class="reaction-shell">
+        <button type="button" id="reaction-target" class="reaction-target" aria-live="polite">Ready</button>
+      </div>
+      <div class="reaction-score" id="reaction-score">Go hits: 0/0 | Avg RT: -- | Stops: 0/0</div>
+      <p class="hint">Tap fast on green. Do nothing on red.</p>
+    </section>
+
+    <section id="pattern-completion" class="card game-panel" data-game-id="pattern">
+      <header class="card-header">
+        <div>
+          <p class="eyebrow">Game 05</p>
+          <h2>Pattern Completion</h2>
+        </div>
+        <div class="card-meta">
+          <p class="status" id="pattern-status">Generate a pattern to begin.</p>
+          <button type="button" class="fullscreen-btn" data-fullscreen-target="pattern-completion">Full screen</button>
+        </div>
+      </header>
+
+      <form class="controls" id="pattern-controls" autocomplete="off">
+        <label class="control">
+          <span>Sequence length</span>
+          <input type="number" id="pattern-gap-length" name="pattern-gap-length" min="4" max="7" value="5" required />
+        </label>
+        <div class="control actions">
+          <button type="button" id="pattern-new">New pattern</button>
+          <button type="button" id="pattern-reset">Reset</button>
+        </div>
+      </form>
+
+      <div class="pattern-sequence" id="pattern-sequence" role="list" aria-label="Pattern sequence"></div>
+      <div class="pattern-options" id="pattern-options" role="group" aria-label="Pattern options"></div>
+      <div class="pattern-score" id="pattern-score">Score: 0/0</div>
+      <p class="hint">Fill the missing last item in the sequence.</p>
+    </section>
+
+    <section id="mental-rotation" class="card game-panel" data-game-id="rotation">
+      <header class="card-header">
+        <div>
+          <p class="eyebrow">Game 06</p>
+          <h2>Mental Rotation Snap</h2>
+        </div>
+        <div class="card-meta">
+          <p class="status" id="rotation-status">Compare the shapes.</p>
+          <button type="button" class="fullscreen-btn" data-fullscreen-target="mental-rotation">Full screen</button>
+        </div>
+      </header>
+
+      <form class="controls" id="rotation-controls" autocomplete="off">
+        <label class="control">
+          <span>Mirror decoys</span>
+          <input type="checkbox" id="rotation-mirror" name="rotation-mirror" checked />
+        </label>
+        <div class="control actions">
+          <button type="button" id="rotation-next">New pair</button>
+          <button type="button" id="rotation-reset">Reset</button>
+        </div>
+      </form>
+
+      <div class="rotation-stage">
+        <canvas id="rotation-left" class="rotation-canvas" width="180" height="180" role="img" aria-label="Left shape"></canvas>
+        <div class="rotation-actions">
+          <button type="button" id="rotation-same">Same</button>
+          <button type="button" id="rotation-different">Different</button>
+        </div>
+        <canvas id="rotation-right" class="rotation-canvas" width="180" height="180" role="img" aria-label="Right shape"></canvas>
+      </div>
+      <div class="rotation-score" id="rotation-score">Score: 0/0</div>
+      <p class="hint">Answer if the shapes match after rotation.</p>
+    </section>
+
+    <section id="dual-task-juggle" class="card game-panel" data-game-id="juggle">
+      <header class="card-header">
+        <div>
+          <p class="eyebrow">Game 07</p>
+          <h2>Dual Task Juggle</h2>
+        </div>
+        <div class="card-meta">
+          <p class="status" id="juggle-status">Start the juggle to begin.</p>
+          <button type="button" class="fullscreen-btn" data-fullscreen-target="dual-task-juggle">Full screen</button>
+        </div>
+      </header>
+
+      <form class="controls" id="juggle-controls" autocomplete="off">
+        <label class="control">
+          <span>Orb speed (px/sec)</span>
+          <input type="number" id="juggle-speed" name="juggle-speed" min="60" max="220" step="10" value="120" required />
+        </label>
+        <label class="control">
+          <span>Math interval (ms)</span>
+          <input type="number" id="juggle-interval" name="juggle-interval" min="1500" max="6000" step="100" value="3000" required />
+        </label>
+        <div class="control actions">
+          <button type="button" id="juggle-start">Start</button>
+          <button type="button" id="juggle-reset">Reset</button>
+        </div>
+      </form>
+
+      <div class="juggle-layout">
+        <div class="juggle-field" id="juggle-field" role="application" aria-label="Moving orb">
+          <div class="juggle-ball" id="juggle-ball" role="button" aria-label="Tap the orb" tabindex="0"></div>
+        </div>
+        <div class="juggle-math">
+          <p class="eyebrow">Math prompt</p>
+          <p class="juggle-question" id="juggle-question">Press start to begin.</p>
+          <div class="juggle-actions">
+            <button type="button" id="juggle-true">True</button>
+            <button type="button" id="juggle-false">False</button>
+          </div>
+          <div class="juggle-score" id="juggle-score">Tracking: 0 hits / 0 misses | Math: 0/0</div>
+        </div>
+      </div>
+      <p class="hint">Click the moving orb while answering the math prompt.</p>
     </section>
   </main>
 
