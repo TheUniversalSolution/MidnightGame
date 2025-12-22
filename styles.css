@@ -1303,6 +1303,241 @@ a:hover {
   text-align: center;
 }
 
+.compress-shell {
+  padding: 12px;
+  background: #0f1320;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  width: min(100%, 420px);
+  margin: 0 auto;
+}
+
+.compress-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.compress-cell {
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #0b0e18;
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  transition: transform 120ms ease, border-color 120ms ease, background 120ms ease, color 120ms ease;
+}
+
+.compress-grid.is-hidden .compress-cell {
+  color: transparent;
+  background: #0f1320;
+}
+
+.compress-inputs {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: 10px;
+}
+
+.compress-inputs.is-hidden {
+  display: none;
+}
+
+.compress-input {
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.compress-input input {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #0f1320;
+  color: var(--text);
+  text-align: center;
+  font-weight: 600;
+}
+
+.compress-input input.correct {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.compress-input input.wrong {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.compress-actions {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+}
+
+.compress-actions button {
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #0f1320;
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 600;
+  transition: transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.compress-actions button:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent-2);
+  box-shadow: var(--shadow);
+}
+
+.compress-score {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #0f1320;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 14px;
+  text-align: center;
+}
+
+.detector-sequence {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.detector-item {
+  min-width: 46px;
+  height: 46px;
+  padding: 0 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #0f1320;
+  color: var(--text);
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.detector-actions {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.detector-actions button {
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #0f1320;
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 600;
+  transition: transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.detector-actions button:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent);
+  box-shadow: var(--shadow);
+}
+
+.detector-score {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #0f1320;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 14px;
+  text-align: center;
+}
+
+.speed-stage {
+  margin-top: 12px;
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+}
+
+.speed-card {
+  width: min(100%, 360px);
+  height: 120px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: #0f1320;
+  color: var(--text);
+  font-size: 32px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  transition: transform 120ms ease, border-color 120ms ease, background 120ms ease, color 120ms ease;
+}
+
+.speed-card.is-correct {
+  background: var(--accent);
+  color: #0b1c15;
+  border-color: var(--accent);
+  transform: scale(1.01);
+}
+
+.speed-card.is-wrong {
+  background: var(--danger);
+  color: #0b1c15;
+  border-color: var(--danger);
+  transform: scale(1.01);
+}
+
+.speed-buttons {
+  width: min(100%, 520px);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.speed-buttons button {
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #0f1320;
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 600;
+  transition: transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.speed-buttons button:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent);
+  box-shadow: var(--shadow);
+}
+
+.speed-score {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #0f1320;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 14px;
+  text-align: center;
+}
+
 .game-panel:fullscreen {
   width: 100%;
   height: 100%;
@@ -1329,14 +1564,19 @@ a:hover {
 .game-panel:fullscreen .noise-shell,
 .game-panel:fullscreen .count-stage,
 .game-panel:fullscreen .recall-interference,
-.game-panel:fullscreen .recall-inputs {
+.game-panel:fullscreen .recall-inputs,
+.game-panel:fullscreen .compress-inputs,
+.game-panel:fullscreen .detector-sequence,
+.game-panel:fullscreen .detector-actions,
+.game-panel:fullscreen .speed-stage {
   width: min(100%, 980px);
 }
 
 .game-panel:fullscreen .grid-shell,
 .game-panel:fullscreen .digit-shell,
 .game-panel:fullscreen .reaction-shell,
-.game-panel:fullscreen .time-shell {
+.game-panel:fullscreen .time-shell,
+.game-panel:fullscreen .compress-shell {
   width: min(100%, 680px);
 }
 

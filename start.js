@@ -2576,6 +2576,681 @@ const initMentalCount = () => {
   return { resetToIdle: reset };
 };
 
+const initSymbolCompression = () => {
+  const sizeInput = document.querySelector("#compress-size");
+  const symbolInput = document.querySelector("#compress-symbols");
+  const exposureInput = document.querySelector("#compress-exposure");
+  const startBtn = document.querySelector("#compress-start");
+  const resetBtn = document.querySelector("#compress-reset");
+  const submitBtn = document.querySelector("#compress-submit");
+  const gridEl = document.querySelector("#compress-grid");
+  const inputsEl = document.querySelector("#compress-inputs");
+  const statusEl = document.querySelector("#compress-status");
+  const scoreEl = document.querySelector("#compress-score");
+
+  if (
+    !sizeInput ||
+    !symbolInput ||
+    !exposureInput ||
+    !startBtn ||
+    !resetBtn ||
+    !submitBtn ||
+    !gridEl ||
+    !inputsEl ||
+    !statusEl ||
+    !scoreEl
+  ) {
+    throw new Error("Required UI elements are missing for Symbol Compression.");
+  }
+
+  const symbolBank = ["X", "O", "+", "#", "%", "@"];
+  let phase = "idle";
+  let gridSize = 5;
+  let symbolCount = 4;
+  let exposureMs = 900;
+  let revealTimer = null;
+  let activeSymbols = [];
+  let symbolCounts = {};
+  const inputMap = new Map();
+
+  const updateStatus = (text) => {
+    statusEl.textContent = text;
+  };
+
+  const updateScore = (text) => {
+    scoreEl.textContent = text;
+  };
+
+  const clearTimer = () => {
+    if (revealTimer === null) return;
+    window.clearTimeout(revealTimer);
+    revealTimer = null;
+  };
+
+  const syncSettings = () => {
+    const parsedSize = Number.parseInt(sizeInput.value, 10);
+    gridSize = clamp(Number.isNaN(parsedSize) ? 5 : parsedSize, 3, 8);
+    sizeInput.value = String(gridSize);
+
+    symbolInput.max = String(symbolBank.length);
+    const parsedSymbols = Number.parseInt(symbolInput.value, 10);
+    symbolCount = clamp(Number.isNaN(parsedSymbols) ? 4 : parsedSymbols, 3, symbolBank.length);
+    symbolInput.value = String(symbolCount);
+
+    const parsedExposure = Number.parseInt(exposureInput.value, 10);
+    exposureMs = clamp(Number.isNaN(parsedExposure) ? 900 : parsedExposure, 400, 2000);
+    exposureInput.value = String(exposureMs);
+  };
+
+  const buildGrid = () => {
+    gridEl.innerHTML = "";
+    gridEl.style.gridTemplateColumns = `repeat(${gridSize}, minmax(0, 1fr))`;
+    activeSymbols = symbolBank.slice(0, symbolCount);
+    symbolCounts = {};
+    activeSymbols.forEach((symbol) => {
+      symbolCounts[symbol] = 0;
+    });
+
+    for (let i = 0; i < gridSize * gridSize; i += 1) {
+      const symbol = activeSymbols[Math.floor(Math.random() * activeSymbols.length)];
+      symbolCounts[symbol] += 1;
+      const cell = document.createElement("div");
+      cell.className = "compress-cell";
+      cell.textContent = symbol;
+      gridEl.appendChild(cell);
+    }
+  };
+
+  const buildInputs = () => {
+    inputsEl.innerHTML = "";
+    inputMap.clear();
+    activeSymbols.forEach((symbol) => {
+      const label = document.createElement("label");
+      label.className = "compress-input";
+      const chip = document.createElement("span");
+      chip.textContent = symbol;
+      const input = document.createElement("input");
+      input.type = "number";
+      input.min = "0";
+      input.value = "0";
+      input.inputMode = "numeric";
+      label.appendChild(chip);
+      label.appendChild(input);
+      inputsEl.appendChild(label);
+      inputMap.set(symbol, input);
+    });
+  };
+
+  const lockInputs = (locked) => {
+    submitBtn.disabled = locked;
+  };
+
+  const startRound = () => {
+    if (phase === "showing") return;
+    syncSettings();
+    clearTimer();
+    buildGrid();
+    buildInputs();
+    gridEl.classList.remove("is-hidden");
+    inputsEl.classList.add("is-hidden");
+    lockInputs(true);
+    startBtn.disabled = true;
+    updateScore(`Correct symbols: 0/${symbolCount} | Total error: --`);
+    updateStatus("Memorize the grid.");
+    phase = "showing";
+    revealTimer = window.setTimeout(() => {
+      gridEl.classList.add("is-hidden");
+      inputsEl.classList.remove("is-hidden");
+      lockInputs(false);
+      updateStatus("Enter counts for each symbol.");
+      phase = "input";
+    }, exposureMs);
+  };
+
+  const submit = () => {
+    if (phase !== "input") return;
+    let correct = 0;
+    let totalError = 0;
+
+    inputMap.forEach((input, symbol) => {
+      const parsed = Number.parseInt(input.value, 10);
+      const guess = Number.isNaN(parsed) ? 0 : parsed;
+      input.value = String(guess);
+      const actual = symbolCounts[symbol] ?? 0;
+      const diff = Math.abs(actual - guess);
+      totalError += diff;
+      input.classList.toggle("correct", diff === 0);
+      input.classList.toggle("wrong", diff !== 0);
+      if (diff === 0) {
+        correct += 1;
+      }
+    });
+
+    updateScore(`Correct symbols: ${correct}/${activeSymbols.length} | Total error: ${totalError}`);
+    updateStatus("Round complete. Start again for a new grid.");
+    phase = "idle";
+    lockInputs(true);
+    startBtn.disabled = false;
+  };
+
+  const reset = () => {
+    clearTimer();
+    phase = "idle";
+    gridEl.innerHTML = "";
+    inputsEl.innerHTML = "";
+    inputsEl.classList.add("is-hidden");
+    gridEl.classList.remove("is-hidden");
+    lockInputs(true);
+    startBtn.disabled = false;
+    updateScore("Correct symbols: 0/0 | Total error: --");
+    updateStatus("Memorize the grid, then compress it into counts.");
+  };
+
+  startBtn.addEventListener("click", startRound);
+  resetBtn.addEventListener("click", reset);
+  submitBtn.addEventListener("click", submit);
+  sizeInput.addEventListener("input", syncSettings);
+  symbolInput.addEventListener("input", syncSettings);
+  exposureInput.addEventListener("input", syncSettings);
+
+  syncSettings();
+  lockInputs(true);
+  reset();
+
+  return { resetToIdle: reset };
+};
+
+const initFalsePatternDetector = () => {
+  const roundsInput = document.querySelector("#detector-rounds");
+  const lengthInput = document.querySelector("#detector-length");
+  const subtleInput = document.querySelector("#detector-subtle");
+  const startBtn = document.querySelector("#detector-start");
+  const resetBtn = document.querySelector("#detector-reset");
+  const patternBtn = document.querySelector("#detector-pattern");
+  const randomBtn = document.querySelector("#detector-random");
+  const statusEl = document.querySelector("#detector-status");
+  const sequenceEl = document.querySelector("#detector-sequence");
+  const scoreEl = document.querySelector("#detector-score");
+
+  if (
+    !roundsInput ||
+    !lengthInput ||
+    !subtleInput ||
+    !startBtn ||
+    !resetBtn ||
+    !patternBtn ||
+    !randomBtn ||
+    !statusEl ||
+    !sequenceEl ||
+    !scoreEl
+  ) {
+    throw new Error("Required UI elements are missing for False Pattern Detector.");
+  }
+
+  let rounds = 16;
+  let length = 6;
+  let useSubtle = false;
+  let running = false;
+  let roundIndex = 0;
+  let currentIsPattern = false;
+  let correct = 0;
+  let falsePositives = 0;
+  let misses = 0;
+  let total = 0;
+  let advanceTimer = null;
+
+  const updateStatus = (text) => {
+    statusEl.textContent = text;
+  };
+
+  const updateScore = () => {
+    const weighted = correct - falsePositives * 2 - misses;
+    scoreEl.textContent = `Correct: ${correct}/${total} | False alarms: ${falsePositives} | Weighted: ${weighted}`;
+  };
+
+  const setChoicesEnabled = (enabled) => {
+    patternBtn.disabled = !enabled;
+    randomBtn.disabled = !enabled;
+  };
+
+  const clearAdvance = () => {
+    if (advanceTimer === null) return;
+    window.clearTimeout(advanceTimer);
+    advanceTimer = null;
+  };
+
+  const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+  const isArithmetic = (sequence) => {
+    if (sequence.length < 3) return false;
+    const diff = sequence[1] - sequence[0];
+    for (let i = 2; i < sequence.length; i += 1) {
+      if (sequence[i] - sequence[i - 1] !== diff) return false;
+    }
+    return true;
+  };
+
+  const isRepeatingChunk = (sequence, chunkSize) => {
+    if (sequence.length < chunkSize * 2) return false;
+    for (let i = 0; i < sequence.length; i += 1) {
+      if (sequence[i] !== sequence[i % chunkSize]) return false;
+    }
+    return true;
+  };
+
+  const isMirror = (sequence) =>
+    sequence.every((value, index) => value === sequence[sequence.length - 1 - index]);
+
+  const isDiffCycle = (sequence, cycleSize) => {
+    if (sequence.length < cycleSize + 2) return false;
+    const diffs = sequence.slice(1).map((value, index) => value - sequence[index]);
+    for (let i = 0; i < diffs.length; i += 1) {
+      if (diffs[i] !== diffs[i % cycleSize]) return false;
+    }
+    return true;
+  };
+
+  const isPatternSequence = (sequence) =>
+    isArithmetic(sequence) ||
+    isMirror(sequence) ||
+    isRepeatingChunk(sequence, 2) ||
+    isRepeatingChunk(sequence, 3) ||
+    isDiffCycle(sequence, 2);
+
+  const buildArithmeticSequence = () => {
+    const steps = [-3, -2, -1, 1, 2, 3];
+    for (let attempt = 0; attempt < 16; attempt += 1) {
+      const step = steps[Math.floor(Math.random() * steps.length)];
+      const start = randomInt(1, 9);
+      const sequence = Array.from({ length }, (_, i) => start + step * i);
+      if (sequence.every((value) => value >= 1 && value <= 9)) {
+        return sequence;
+      }
+    }
+    return Array.from({ length }, () => 5);
+  };
+
+  const buildAlternatingSequence = () => {
+    let first = randomInt(1, 9);
+    let second = randomInt(1, 9);
+    while (second === first) {
+      second = randomInt(1, 9);
+    }
+    return Array.from({ length }, (_, i) => (i % 2 === 0 ? first : second));
+  };
+
+  const buildMirrorSequence = () => {
+    const halfLength = Math.ceil(length / 2);
+    const half = Array.from({ length: halfLength }, () => randomInt(1, 9));
+    const mirror = [...half];
+    const startIndex = length % 2 === 0 ? halfLength - 1 : halfLength - 2;
+    for (let i = startIndex; i >= 0; i -= 1) {
+      mirror.push(half[i]);
+    }
+    return mirror;
+  };
+
+  const buildRepeatSequence = () => {
+    const chunkSize = randomInt(2, 3);
+    const chunk = Array.from({ length: chunkSize }, () => randomInt(1, 9));
+    return Array.from({ length }, (_, i) => chunk[i % chunkSize]);
+  };
+
+  const buildDiffCycleSequence = () => {
+    const stepOptions = [-2, -1, 1, 2];
+    for (let attempt = 0; attempt < 16; attempt += 1) {
+      const cycle = [
+        stepOptions[Math.floor(Math.random() * stepOptions.length)],
+        stepOptions[Math.floor(Math.random() * stepOptions.length)],
+      ];
+      const start = randomInt(1, 9);
+      const sequence = [start];
+      for (let i = 1; i < length; i += 1) {
+        const next = sequence[i - 1] + cycle[(i - 1) % cycle.length];
+        if (next < 1 || next > 9) break;
+        sequence.push(next);
+      }
+      if (sequence.length === length) {
+        return sequence;
+      }
+    }
+    return buildArithmeticSequence();
+  };
+
+  const generatePatternSequence = () => {
+    const builders = useSubtle
+      ? [
+          buildArithmeticSequence,
+          buildAlternatingSequence,
+          buildMirrorSequence,
+          buildRepeatSequence,
+          buildDiffCycleSequence,
+        ]
+      : [buildArithmeticSequence, buildAlternatingSequence, buildMirrorSequence];
+    const builder = builders[Math.floor(Math.random() * builders.length)];
+    const sequence = builder();
+    return isPatternSequence(sequence) ? sequence : buildArithmeticSequence();
+  };
+
+  const generateRandomSequence = () => {
+    let sequence = [];
+    for (let attempt = 0; attempt < 25; attempt += 1) {
+      sequence = Array.from({ length }, () => randomInt(1, 9));
+      if (!isPatternSequence(sequence)) {
+        return sequence;
+      }
+    }
+    return sequence;
+  };
+
+  const showSequence = (sequence) => {
+    sequenceEl.innerHTML = "";
+    sequence.forEach((value) => {
+      const item = document.createElement("div");
+      item.className = "detector-item";
+      item.textContent = String(value);
+      sequenceEl.appendChild(item);
+    });
+  };
+
+  const nextRound = () => {
+    if (!running) return;
+    if (roundIndex >= rounds) {
+      stop("Session complete. Review your calls.");
+      return;
+    }
+    currentIsPattern = Math.random() < 0.5;
+    const sequence = currentIsPattern ? generatePatternSequence() : generateRandomSequence();
+    showSequence(sequence);
+    updateStatus(`Round ${roundIndex + 1} of ${rounds}: Pattern or random?`);
+  };
+
+  const handleChoice = (choiceIsPattern) => {
+    if (!running) return;
+    total += 1;
+    roundIndex += 1;
+    if (choiceIsPattern === currentIsPattern) {
+      correct += 1;
+      updateStatus("Correct.");
+    } else if (choiceIsPattern) {
+      falsePositives += 1;
+      updateStatus("False alarm. That was random.");
+    } else {
+      misses += 1;
+      updateStatus("Missed pattern. That was structured.");
+    }
+    updateScore();
+    clearAdvance();
+    advanceTimer = window.setTimeout(nextRound, 450);
+  };
+
+  const syncSettings = () => {
+    const parsedRounds = Number.parseInt(roundsInput.value, 10);
+    rounds = clamp(Number.isNaN(parsedRounds) ? 16 : parsedRounds, 8, 30);
+    roundsInput.value = String(rounds);
+
+    const parsedLength = Number.parseInt(lengthInput.value, 10);
+    length = clamp(Number.isNaN(parsedLength) ? 6 : parsedLength, 4, 10);
+    lengthInput.value = String(length);
+
+    useSubtle = subtleInput.checked;
+  };
+
+  const start = () => {
+    if (running) return;
+    syncSettings();
+    running = true;
+    roundIndex = 0;
+    correct = 0;
+    falsePositives = 0;
+    misses = 0;
+    total = 0;
+    updateScore();
+    startBtn.disabled = true;
+    setChoicesEnabled(true);
+    nextRound();
+  };
+
+  const stop = (message) => {
+    running = false;
+    clearAdvance();
+    setChoicesEnabled(false);
+    startBtn.disabled = false;
+    updateStatus(message);
+  };
+
+  const reset = () => {
+    stop("Is it a pattern or just noise?");
+    sequenceEl.innerHTML = "";
+    updateScore();
+  };
+
+  startBtn.addEventListener("click", start);
+  resetBtn.addEventListener("click", reset);
+  patternBtn.addEventListener("click", () => handleChoice(true));
+  randomBtn.addEventListener("click", () => handleChoice(false));
+  roundsInput.addEventListener("input", syncSettings);
+  lengthInput.addEventListener("input", syncSettings);
+  subtleInput.addEventListener("change", syncSettings);
+
+  syncSettings();
+  setChoicesEnabled(false);
+  reset();
+
+  return { resetToIdle: reset };
+};
+
+const initSpeedCategorization = () => {
+  const panel = document.querySelector("#speed-categorization");
+  const roundsInput = document.querySelector("#speed-rounds");
+  const durationInput = document.querySelector("#speed-duration");
+  const categoriesInput = document.querySelector("#speed-categories");
+  const startBtn = document.querySelector("#speed-start");
+  const resetBtn = document.querySelector("#speed-reset");
+  const statusEl = document.querySelector("#speed-status");
+  const cardEl = document.querySelector("#speed-card");
+  const buttonsEl = document.querySelector("#speed-buttons");
+  const scoreEl = document.querySelector("#speed-score");
+
+  if (
+    !panel ||
+    !roundsInput ||
+    !durationInput ||
+    !categoriesInput ||
+    !startBtn ||
+    !resetBtn ||
+    !statusEl ||
+    !cardEl ||
+    !buttonsEl ||
+    !scoreEl
+  ) {
+    throw new Error("Required UI elements are missing for Speed Categorization.");
+  }
+
+  const categoryBank = [
+    { label: "Animal", items: ["Lion", "Panda", "Otter", "Hawk", "Frog", "Wolf"] },
+    { label: "Tool", items: ["Hammer", "Wrench", "Drill", "Saw", "Ladder", "Chisel"] },
+    { label: "Place", items: ["Harbor", "Forest", "Canyon", "Desert", "Village", "Island"] },
+    { label: "Food", items: ["Apple", "Bread", "Cheese", "Carrot", "Noodle", "Berry"] },
+  ];
+
+  let rounds = 20;
+  let displayMs = 700;
+  let categoryCount = 2;
+  let activeCategories = categoryBank.slice(0, categoryCount);
+  let running = false;
+  let roundIndex = 0;
+  let correct = 0;
+  let total = 0;
+  let responseTimes = [];
+  let currentCategoryIndex = 0;
+  let roundStart = 0;
+  let allowResponse = false;
+  let itemTimer = null;
+  let advanceTimer = null;
+
+  const updateStatus = (text) => {
+    statusEl.textContent = text;
+  };
+
+  const updateScore = () => {
+    if (total === 0) {
+      scoreEl.textContent = "Accuracy: 0/0 | Avg RT: -- | Speed: --";
+      return;
+    }
+    const avgRt = Math.round(
+      responseTimes.reduce((sum, value) => sum + value, 0) / responseTimes.length,
+    );
+    const accuracy = correct / total;
+    const speedScore = Math.max(0, accuracy * (1000 / avgRt));
+    scoreEl.textContent = `Accuracy: ${correct}/${total} | Avg RT: ${avgRt}ms | Speed: ${speedScore.toFixed(2)}`;
+  };
+
+  const clearTimers = () => {
+    if (itemTimer !== null) {
+      window.clearTimeout(itemTimer);
+      itemTimer = null;
+    }
+    if (advanceTimer !== null) {
+      window.clearTimeout(advanceTimer);
+      advanceTimer = null;
+    }
+  };
+
+  const syncSettings = () => {
+    const parsedRounds = Number.parseInt(roundsInput.value, 10);
+    rounds = clamp(Number.isNaN(parsedRounds) ? 20 : parsedRounds, 10, 40);
+    roundsInput.value = String(rounds);
+
+    const parsedDuration = Number.parseInt(durationInput.value, 10);
+    displayMs = clamp(Number.isNaN(parsedDuration) ? 700 : parsedDuration, 300, 1200);
+    durationInput.value = String(displayMs);
+
+    categoriesInput.max = String(categoryBank.length);
+    const parsedCategories = Number.parseInt(categoriesInput.value, 10);
+    categoryCount = clamp(Number.isNaN(parsedCategories) ? 2 : parsedCategories, 2, categoryBank.length);
+    categoriesInput.value = String(categoryCount);
+    activeCategories = categoryBank.slice(0, categoryCount);
+    if (!running) {
+      buildButtons();
+    }
+  };
+
+  const buildButtons = () => {
+    buttonsEl.innerHTML = "";
+    activeCategories.forEach((category, index) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = `${index + 1} ${category.label}`;
+      button.addEventListener("click", () => handleChoice(index));
+      buttonsEl.appendChild(button);
+    });
+  };
+
+  const nextItem = () => {
+    if (!running) return;
+    if (roundIndex >= rounds) {
+      stop("Session complete. Review your speed.");
+      return;
+    }
+    cardEl.classList.remove("is-correct", "is-wrong");
+    const categoryIndex = Math.floor(Math.random() * activeCategories.length);
+    const pool = activeCategories[categoryIndex].items;
+    const item = pool[Math.floor(Math.random() * pool.length)];
+    currentCategoryIndex = categoryIndex;
+    cardEl.textContent = item;
+    allowResponse = true;
+    roundStart = performance.now();
+    clearTimers();
+    itemTimer = window.setTimeout(handleNoResponse, displayMs);
+    updateStatus(`Round ${roundIndex + 1} of ${rounds}`);
+  };
+
+  const handleChoice = (choiceIndex) => {
+    if (!running || !allowResponse) return;
+    allowResponse = false;
+    clearTimers();
+    const rt = performance.now() - roundStart;
+    responseTimes.push(rt);
+    total += 1;
+    roundIndex += 1;
+    if (choiceIndex === currentCategoryIndex) {
+      correct += 1;
+      cardEl.classList.add("is-correct");
+      updateStatus("Correct.");
+    } else {
+      cardEl.classList.add("is-wrong");
+      updateStatus("Wrong.");
+    }
+    updateScore();
+    advanceTimer = window.setTimeout(nextItem, 350);
+  };
+
+  const handleNoResponse = () => {
+    if (!running || !allowResponse) return;
+    allowResponse = false;
+    total += 1;
+    roundIndex += 1;
+    responseTimes.push(displayMs);
+    cardEl.classList.add("is-wrong");
+    updateStatus("Too slow.");
+    updateScore();
+    advanceTimer = window.setTimeout(nextItem, 350);
+  };
+
+  const start = () => {
+    if (running) return;
+    syncSettings();
+    running = true;
+    roundIndex = 0;
+    correct = 0;
+    total = 0;
+    responseTimes = [];
+    startBtn.disabled = true;
+    nextItem();
+  };
+
+  const stop = (message) => {
+    running = false;
+    allowResponse = false;
+    clearTimers();
+    startBtn.disabled = false;
+    updateStatus(message);
+  };
+
+  const reset = () => {
+    stop("Sort each word instantly.");
+    cardEl.textContent = "Ready";
+    cardEl.classList.remove("is-correct", "is-wrong");
+    updateScore();
+    buildButtons();
+  };
+
+  const handleKeydown = (event) => {
+    if (!running || !panel.classList.contains("active")) return;
+    if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
+    const key = Number.parseInt(event.key, 10);
+    if (Number.isNaN(key)) return;
+    if (key >= 1 && key <= activeCategories.length) {
+      event.preventDefault();
+      handleChoice(key - 1);
+    }
+  };
+
+  startBtn.addEventListener("click", start);
+  resetBtn.addEventListener("click", reset);
+  roundsInput.addEventListener("input", syncSettings);
+  durationInput.addEventListener("input", syncSettings);
+  categoriesInput.addEventListener("input", syncSettings);
+  window.addEventListener("keydown", handleKeydown);
+
+  syncSettings();
+  updateScore();
+  reset();
+
+  return { resetToIdle: reset };
+};
+
 const boot = () => {
   const heroTitleEl = document.querySelector("#hero-game-title");
   const heroSubEl = document.querySelector("#hero-game-sub");
@@ -2598,6 +3273,9 @@ const boot = () => {
   const recallGame = initDelayedRecall();
   const noiseGame = initBinaryNoise();
   const countGame = initMentalCount();
+  const compressGame = initSymbolCompression();
+  const detectorGame = initFalsePatternDetector();
+  const speedGame = initSpeedCategorization();
 
   const games = [
     { id: "memory", title: "Memory Tester", description: "Sequence recall on a custom grid." },
@@ -2612,6 +3290,9 @@ const boot = () => {
     { id: "recall", title: "Delayed Recall Ping", description: "Hold the set through a delay." },
     { id: "noise", title: "Binary Choice Under Noise", description: "Choose under heavy distraction." },
     { id: "count", title: "Mental Count Drift", description: "Track the running total." },
+    { id: "compress", title: "Symbol Compression", description: "Compress a grid into counts." },
+    { id: "detector", title: "False Pattern Detector", description: "Call out patterns without overfitting." },
+    { id: "speed", title: "Speed Categorization", description: "Sort words at full speed." },
   ];
 
   let activeIndex = 0;
@@ -2669,6 +3350,15 @@ const boot = () => {
     }
     if (meta.id !== "count") {
       countGame.resetToIdle();
+    }
+    if (meta.id !== "compress") {
+      compressGame.resetToIdle();
+    }
+    if (meta.id !== "detector") {
+      detectorGame.resetToIdle();
+    }
+    if (meta.id !== "speed") {
+      speedGame.resetToIdle();
     }
   };
 

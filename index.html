@@ -19,11 +19,17 @@
           <option value="count">Mental Count Drift</option>
           <option value="recall">Delayed Recall Ping</option>
         </optgroup>
+        <optgroup label="Chunking & Abstraction">
+          <option value="compress">Symbol Compression</option>
+        </optgroup>
         <optgroup label="Inhibitory Control">
           <option value="reaction">Reaction Inhibition</option>
         </optgroup>
         <optgroup label="Fluid Reasoning">
           <option value="pattern">Pattern Completion</option>
+        </optgroup>
+        <optgroup label="Pattern Skepticism">
+          <option value="detector">False Pattern Detector</option>
         </optgroup>
         <optgroup label="Cognitive Flexibility">
           <option value="rules">Rule Switcher</option>
@@ -36,6 +42,9 @@
         </optgroup>
         <optgroup label="Selective Attention">
           <option value="noise">Binary Choice Under Noise</option>
+        </optgroup>
+        <optgroup label="Semantic Access Speed">
+          <option value="speed">Speed Categorization</option>
         </optgroup>
         <optgroup label="Timing">
           <option value="time">Time Estimation Trap</option>
@@ -532,6 +541,127 @@
       </div>
       <div class="count-score" id="count-score">Correct: 0/0 | Last: --</div>
       <p class="hint">Keep the running total as the stream changes.</p>
+    </section>
+
+    <section id="symbol-compression" class="card game-panel" data-game-id="compress">
+      <header class="card-header">
+        <div>
+          <p class="eyebrow">Game 13</p>
+          <h2>Symbol Compression</h2>
+        </div>
+        <div class="card-meta">
+          <p class="status" id="compress-status">Memorize the grid, then compress it into counts.</p>
+          <button type="button" class="fullscreen-btn" data-fullscreen-target="symbol-compression">Full screen</button>
+        </div>
+      </header>
+
+      <form class="controls" id="compress-controls" autocomplete="off">
+        <label class="control">
+          <span>Grid size</span>
+          <input type="number" id="compress-size" name="compress-size" min="3" max="8" value="5" required />
+        </label>
+        <label class="control">
+          <span>Symbol types</span>
+          <input type="number" id="compress-symbols" name="compress-symbols" min="3" max="6" value="4" required />
+        </label>
+        <label class="control">
+          <span>Exposure (ms)</span>
+          <input type="number" id="compress-exposure" name="compress-exposure" min="400" max="2000" step="50" value="900" required />
+        </label>
+        <div class="control actions">
+          <button type="button" id="compress-start">Start</button>
+          <button type="button" id="compress-reset">Reset</button>
+        </div>
+      </form>
+
+      <div class="compress-shell">
+        <div class="compress-grid" id="compress-grid" role="grid" aria-label="Symbol grid"></div>
+      </div>
+      <div class="compress-inputs is-hidden" id="compress-inputs"></div>
+      <div class="compress-actions">
+        <button type="button" id="compress-submit">Submit counts</button>
+      </div>
+      <div class="compress-score" id="compress-score">Correct symbols: 0/0 | Total error: --</div>
+      <p class="hint">No timer on screen. Count each symbol after the flash.</p>
+    </section>
+
+    <section id="false-pattern" class="card game-panel" data-game-id="detector">
+      <header class="card-header">
+        <div>
+          <p class="eyebrow">Game 14</p>
+          <h2>False Pattern Detector</h2>
+        </div>
+        <div class="card-meta">
+          <p class="status" id="detector-status">Is it a pattern or just noise?</p>
+          <button type="button" class="fullscreen-btn" data-fullscreen-target="false-pattern">Full screen</button>
+        </div>
+      </header>
+
+      <form class="controls" id="detector-controls" autocomplete="off">
+        <label class="control">
+          <span>Rounds</span>
+          <input type="number" id="detector-rounds" name="detector-rounds" min="8" max="30" value="16" required />
+        </label>
+        <label class="control">
+          <span>Sequence length</span>
+          <input type="number" id="detector-length" name="detector-length" min="4" max="10" value="6" required />
+        </label>
+        <label class="control">
+          <span>Subtle patterns</span>
+          <input type="checkbox" id="detector-subtle" name="detector-subtle" />
+        </label>
+        <div class="control actions">
+          <button type="button" id="detector-start">Start</button>
+          <button type="button" id="detector-reset">Reset</button>
+        </div>
+      </form>
+
+      <div class="detector-sequence" id="detector-sequence" role="list" aria-label="Sequence"></div>
+      <div class="detector-actions">
+        <button type="button" id="detector-pattern">Pattern</button>
+        <button type="button" id="detector-random">Random</button>
+      </div>
+      <div class="detector-score" id="detector-score">Correct: 0/0 | False alarms: 0 | Weighted: 0</div>
+      <p class="hint">Call out real structure without overfitting random noise.</p>
+    </section>
+
+    <section id="speed-categorization" class="card game-panel" data-game-id="speed">
+      <header class="card-header">
+        <div>
+          <p class="eyebrow">Game 15</p>
+          <h2>Speed Categorization</h2>
+        </div>
+        <div class="card-meta">
+          <p class="status" id="speed-status">Sort each word instantly.</p>
+          <button type="button" class="fullscreen-btn" data-fullscreen-target="speed-categorization">Full screen</button>
+        </div>
+      </header>
+
+      <form class="controls" id="speed-controls" autocomplete="off">
+        <label class="control">
+          <span>Rounds</span>
+          <input type="number" id="speed-rounds" name="speed-rounds" min="10" max="40" value="20" required />
+        </label>
+        <label class="control">
+          <span>Display time (ms)</span>
+          <input type="number" id="speed-duration" name="speed-duration" min="300" max="1200" step="50" value="700" required />
+        </label>
+        <label class="control">
+          <span>Categories</span>
+          <input type="number" id="speed-categories" name="speed-categories" min="2" max="4" value="2" required />
+        </label>
+        <div class="control actions">
+          <button type="button" id="speed-start">Start</button>
+          <button type="button" id="speed-reset">Reset</button>
+        </div>
+      </form>
+
+      <div class="speed-stage">
+        <div class="speed-card" id="speed-card" aria-live="polite">Ready</div>
+        <div class="speed-buttons" id="speed-buttons"></div>
+      </div>
+      <div class="speed-score" id="speed-score">Accuracy: 0/0 | Avg RT: -- | Speed: --</div>
+      <p class="hint">Tap or press keys 1-4 for the category.</p>
     </section>
   </main>
 
