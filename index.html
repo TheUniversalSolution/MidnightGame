@@ -12,13 +12,34 @@
     <label class="game-select">
       <span>Games</span>
       <select id="game-select" aria-label="Select a game">
-        <option value="memory">Memory Tester</option>
-        <option value="nback">Dual N-Back</option>
-        <option value="digits">Digit Order</option>
-        <option value="reaction">Reaction Inhibition</option>
-        <option value="pattern">Pattern Completion</option>
-        <option value="rotation">Mental Rotation Snap</option>
-        <option value="juggle">Dual Task Juggle</option>
+        <optgroup label="Working Memory">
+          <option value="memory">Memory Tester</option>
+          <option value="nback">Dual N-Back</option>
+          <option value="digits">Digit Order</option>
+          <option value="count">Mental Count Drift</option>
+          <option value="recall">Delayed Recall Ping</option>
+        </optgroup>
+        <optgroup label="Inhibitory Control">
+          <option value="reaction">Reaction Inhibition</option>
+        </optgroup>
+        <optgroup label="Fluid Reasoning">
+          <option value="pattern">Pattern Completion</option>
+        </optgroup>
+        <optgroup label="Cognitive Flexibility">
+          <option value="rules">Rule Switcher</option>
+        </optgroup>
+        <optgroup label="Spatial Reasoning">
+          <option value="rotation">Mental Rotation Snap</option>
+        </optgroup>
+        <optgroup label="Divided Attention">
+          <option value="juggle">Dual Task Juggle</option>
+        </optgroup>
+        <optgroup label="Selective Attention">
+          <option value="noise">Binary Choice Under Noise</option>
+        </optgroup>
+        <optgroup label="Timing">
+          <option value="time">Time Estimation Trap</option>
+        </optgroup>
       </select>
     </label>
   </header>
@@ -291,6 +312,226 @@
         </div>
       </div>
       <p class="hint">Click the moving orb while answering the math prompt.</p>
+    </section>
+
+    <section id="time-estimation" class="card game-panel" data-game-id="time">
+      <header class="card-header">
+        <div>
+          <p class="eyebrow">Game 08</p>
+          <h2>Time Estimation Trap</h2>
+        </div>
+        <div class="card-meta">
+          <p class="status" id="time-status">Estimate the target interval.</p>
+          <button type="button" class="fullscreen-btn" data-fullscreen-target="time-estimation">Full screen</button>
+        </div>
+      </header>
+
+      <form class="controls" id="time-controls" autocomplete="off">
+        <label class="control">
+          <span>Target (sec)</span>
+          <input type="number" id="time-target" name="time-target" min="5" max="20" value="10" required />
+        </label>
+        <label class="control">
+          <span>Randomize target</span>
+          <input type="checkbox" id="time-random" name="time-random" />
+        </label>
+        <label class="control">
+          <span>Distractions</span>
+          <input type="checkbox" id="time-distractions" name="time-distractions" checked />
+        </label>
+        <div class="control actions">
+          <button type="button" id="time-toggle">Start</button>
+          <button type="button" id="time-reset">Reset</button>
+        </div>
+      </form>
+
+      <div class="time-shell">
+        <div class="time-face" id="time-face" aria-live="polite">
+          <div class="time-face-title" id="time-face-title">Ready</div>
+          <div class="time-face-sub" id="time-face-sub">Target: 10s</div>
+        </div>
+        <div class="time-noise" id="time-noise" aria-hidden="true"></div>
+      </div>
+      <div class="time-score" id="time-score">Last error: -- | Best: -- | Score: --</div>
+      <p class="hint">Press Start, then Stop when you think the target time passed.</p>
+    </section>
+
+    <section id="rule-switcher" class="card game-panel" data-game-id="rules">
+      <header class="card-header">
+        <div>
+          <p class="eyebrow">Game 09</p>
+          <h2>Rule Switcher</h2>
+        </div>
+        <div class="card-meta">
+          <p class="status" id="rule-status">Respond to the active rule.</p>
+          <button type="button" class="fullscreen-btn" data-fullscreen-target="rule-switcher">Full screen</button>
+        </div>
+      </header>
+
+      <form class="controls" id="rule-controls" autocomplete="off">
+        <label class="control">
+          <span>Rounds</span>
+          <input type="number" id="rule-rounds" name="rule-rounds" min="10" max="40" value="20" required />
+        </label>
+        <label class="control">
+          <span>Switch pace (trials)</span>
+          <input type="number" id="rule-switch" name="rule-switch" min="3" max="10" value="6" required />
+        </label>
+        <label class="control">
+          <span>Include size rule</span>
+          <input type="checkbox" id="rule-size" name="rule-size" />
+        </label>
+        <div class="control actions">
+          <button type="button" id="rule-start">Start</button>
+          <button type="button" id="rule-reset">Reset</button>
+        </div>
+      </form>
+
+      <div class="rule-stage">
+        <div class="rule-stimulus size-large shape-circle color-red" id="rule-stimulus" role="img" aria-label="Stimulus">
+          <span id="rule-stimulus-label">Circle</span>
+        </div>
+        <div class="rule-buttons">
+          <button type="button" id="rule-left">Left</button>
+          <button type="button" id="rule-right">Right</button>
+        </div>
+      </div>
+      <div class="rule-legend">
+        <div class="rule-pill" data-rule="color">Color: Red = Left, Blue = Right</div>
+        <div class="rule-pill" data-rule="shape">Shape: Circle = Left, Triangle = Right</div>
+        <div class="rule-pill" data-rule="size">Size: Large = Left, Small = Right</div>
+      </div>
+      <div class="rule-score" id="rule-score">Correct: 0/0 | Switch errors: 0</div>
+      <p class="hint">Rule switches without warning. Use feedback to adapt.</p>
+    </section>
+
+    <section id="delayed-recall" class="card game-panel" data-game-id="recall">
+      <header class="card-header">
+        <div>
+          <p class="eyebrow">Game 10</p>
+          <h2>Delayed Recall Ping</h2>
+        </div>
+        <div class="card-meta">
+          <p class="status" id="recall-status">Memorize the set, then wait for the ping.</p>
+          <button type="button" class="fullscreen-btn" data-fullscreen-target="delayed-recall">Full screen</button>
+        </div>
+      </header>
+
+      <form class="controls" id="recall-controls" autocomplete="off">
+        <label class="control">
+          <span>Set size</span>
+          <input type="number" id="recall-size" name="recall-size" min="3" max="7" value="5" required />
+        </label>
+        <label class="control">
+          <span>Delay (sec)</span>
+          <input type="number" id="recall-delay" name="recall-delay" min="30" max="120" value="60" required />
+        </label>
+        <div class="control actions">
+          <button type="button" id="recall-start">Start</button>
+          <button type="button" id="recall-reset">Reset</button>
+        </div>
+      </form>
+
+      <div class="recall-set" id="recall-set" role="list" aria-label="Recall set"></div>
+      <div class="recall-interference">
+        <p class="eyebrow">Interference</p>
+        <button type="button" id="recall-pulse" class="recall-pulse">Wait</button>
+        <div class="recall-interference-score" id="recall-interference-score">Hits: 0</div>
+      </div>
+      <div class="recall-inputs" id="recall-inputs"></div>
+      <div class="recall-actions">
+        <button type="button" id="recall-submit">Submit recall</button>
+      </div>
+      <div class="recall-score" id="recall-score">Recall: 0/0</div>
+      <p class="hint">Recall the set in order after the delay ends.</p>
+    </section>
+
+    <section id="binary-noise" class="card game-panel" data-game-id="noise">
+      <header class="card-header">
+        <div>
+          <p class="eyebrow">Game 11</p>
+          <h2>Binary Choice Under Noise</h2>
+        </div>
+        <div class="card-meta">
+          <p class="status" id="noise-status">Focus on the target and ignore the noise.</p>
+          <button type="button" class="fullscreen-btn" data-fullscreen-target="binary-noise">Full screen</button>
+        </div>
+      </header>
+
+      <form class="controls" id="noise-controls" autocomplete="off">
+        <label class="control">
+          <span>Rounds</span>
+          <input type="number" id="noise-rounds" name="noise-rounds" min="10" max="40" value="20" required />
+        </label>
+        <label class="control">
+          <span>Stimulus (ms)</span>
+          <input type="number" id="noise-duration" name="noise-duration" min="300" max="1200" step="50" value="700" required />
+        </label>
+        <label class="control">
+          <span>Noise level</span>
+          <input type="number" id="noise-level" name="noise-level" min="1" max="5" value="3" required />
+        </label>
+        <div class="control actions">
+          <button type="button" id="noise-start">Start</button>
+          <button type="button" id="noise-reset">Reset</button>
+        </div>
+      </form>
+
+      <div class="noise-shell">
+        <div class="noise-field" id="noise-field" role="img" aria-label="Noise field">
+          <div class="noise-stimulus" id="noise-stimulus">-</div>
+          <div class="noise-overlay" id="noise-overlay" aria-hidden="true"></div>
+        </div>
+        <div class="noise-actions">
+          <button type="button" id="noise-left">Left</button>
+          <button type="button" id="noise-right">Right</button>
+        </div>
+      </div>
+      <div class="noise-score" id="noise-score">Accuracy: 0/0 | Avg RT: -- | Focus: --</div>
+      <p class="hint">Respond quickly while the field distracts you.</p>
+    </section>
+
+    <section id="count-drift" class="card game-panel" data-game-id="count">
+      <header class="card-header">
+        <div>
+          <p class="eyebrow">Game 12</p>
+          <h2>Mental Count Drift</h2>
+        </div>
+        <div class="card-meta">
+          <p class="status" id="count-status">Track the count in your head.</p>
+          <button type="button" class="fullscreen-btn" data-fullscreen-target="count-drift">Full screen</button>
+        </div>
+      </header>
+
+      <form class="controls" id="count-controls" autocomplete="off">
+        <label class="control">
+          <span>Stream speed (ms)</span>
+          <input type="number" id="count-speed" name="count-speed" min="450" max="1500" step="50" value="900" required />
+        </label>
+        <label class="control">
+          <span>Prompt interval</span>
+          <input type="number" id="count-prompt" name="count-prompt" min="4" max="12" value="7" required />
+        </label>
+        <label class="control">
+          <span>Include +/-2</span>
+          <input type="checkbox" id="count-plus2" name="count-plus2" />
+        </label>
+        <div class="control actions">
+          <button type="button" id="count-start">Start</button>
+          <button type="button" id="count-reset">Reset</button>
+        </div>
+      </form>
+
+      <div class="count-stage">
+        <div class="count-stream" id="count-stream">+</div>
+        <div class="count-prompt" id="count-prompt-area">
+          <label class="count-label" for="count-input">Current count</label>
+          <input type="number" id="count-input" name="count-input" />
+          <button type="button" id="count-submit">Submit</button>
+        </div>
+      </div>
+      <div class="count-score" id="count-score">Correct: 0/0 | Last: --</div>
+      <p class="hint">Keep the running total as the stream changes.</p>
     </section>
   </main>
 

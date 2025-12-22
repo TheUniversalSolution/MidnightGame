@@ -1516,6 +1516,1066 @@ const initDualTaskJuggle = () => {
   return { resetToIdle: reset };
 };
 
+const initTimeEstimation = () => {
+  const targetInput = document.querySelector("#time-target");
+  const randomInput = document.querySelector("#time-random");
+  const distractionsInput = document.querySelector("#time-distractions");
+  const toggleBtn = document.querySelector("#time-toggle");
+  const resetBtn = document.querySelector("#time-reset");
+  const faceEl = document.querySelector("#time-face");
+  const faceTitleEl = document.querySelector("#time-face-title");
+  const faceSubEl = document.querySelector("#time-face-sub");
+  const noiseEl = document.querySelector("#time-noise");
+  const statusEl = document.querySelector("#time-status");
+  const scoreEl = document.querySelector("#time-score");
+
+  if (
+    !targetInput ||
+    !randomInput ||
+    !distractionsInput ||
+    !toggleBtn ||
+    !resetBtn ||
+    !faceEl ||
+    !faceTitleEl ||
+    !faceSubEl ||
+    !noiseEl ||
+    !statusEl ||
+    !scoreEl
+  ) {
+    throw new Error("Required UI elements are missing for Time Estimation Trap.");
+  }
+
+  let targetSeconds = 10;
+  let randomize = false;
+  let distractions = true;
+  let running = false;
+  let startTime = 0;
+  let lastError = null;
+  let bestError = null;
+  let noiseTimer = null;
+
+  const updateStatus = (text) => {
+    statusEl.textContent = text;
+  };
+
+  const updateScore = () => {
+    const format = (value) => (value === null ? "--" : `${(value / 1000).toFixed(2)}s`);
+    const score =
+      lastError === null ? "--" : Math.max(0, Math.round(100 - lastError / 100)).toString();
+    scoreEl.textContent = `Last error: ${format(lastError)} | Best: ${format(bestError)} | Score: ${score}`;
+  };
+
+  const setFaceState = (state, title, sub) => {
+    faceEl.classList.remove("is-running", "is-done");
+    if (state === "running") {
+      faceEl.classList.add("is-running");
+    }
+    if (state === "done") {
+      faceEl.classList.add("is-done");
+    }
+    faceTitleEl.textContent = title;
+    faceSubEl.textContent = sub;
+  };
+
+  const syncSettings = () => {
+    const parsedTarget = Number.parseInt(targetInput.value, 10);
+    targetSeconds = clamp(Number.isNaN(parsedTarget) ? 10 : parsedTarget, 5, 20);
+    targetInput.value = String(targetSeconds);
+    randomize = randomInput.checked;
+    distractions = distractionsInput.checked;
+  };
+
+  const spawnNoise = () => {
+    if (!distractions) return;
+    const shard = document.createElement("div");
+    shard.className = "time-shard";
+    const size = 8 + Math.random() * 14;
+    shard.style.width = `${size}px`;
+    shard.style.height = `${size}px`;
+    shard.style.left = `${Math.random() * 100}%`;
+    shard.style.top = `${Math.random() * 100}%`;
+    noiseEl.appendChild(shard);
+    window.setTimeout(() => shard.remove(), 800);
+  };
+
+  const startNoise = () => {
+    if (!distractions) return;
+    if (noiseTimer !== null) {
+      window.clearInterval(noiseTimer);
+    }
+    noiseTimer = window.setInterval(spawnNoise, 320);
+  };
+
+  const stopNoise = () => {
+    if (noiseTimer !== null) {
+      window.clearInterval(noiseTimer);
+      noiseTimer = null;
+    }
+    noiseEl.innerHTML = "";
+  };
+
+  const getTarget = () => {
+    if (!randomize) return targetSeconds;
+    const next = Math.floor(5 + Math.random() * 16);
+    targetSeconds = next;
+    targetInput.value = String(next);
+    return next;
+  };
+
+  const start = () => {
+    if (running) return;
+    syncSettings();
+    const target = getTarget();
+    running = true;
+    startTime = performance.now();
+    toggleBtn.textContent = "Stop";
+    setFaceState("running", "Timing", `Target: ${target}s`);
+    updateStatus("Counting internally...");
+    startNoise();
+  };
+
+  const stop = () => {
+    if (!running) return;
+    running = false;
+    stopNoise();
+    toggleBtn.textContent = "Start";
+    const elapsed = performance.now() - startTime;
+    const targetMs = targetSeconds * 1000;
+    const error = Math.abs(elapsed - targetMs);
+    lastError = error;
+    if (bestError === null || error < bestError) {
+      bestError = error;
+    }
+    setFaceState(
+      "done",
+      "Stopped",
+      `Actual: ${(elapsed / 1000).toFixed(2)}s | Target: ${targetSeconds}s`,
+    );
+    updateStatus(`Error: ${(error / 1000).toFixed(2)}s`);
+    updateScore();
+  };
+
+  const reset = () => {
+    running = false;
+    stopNoise();
+    lastError = null;
+    bestError = null;
+    toggleBtn.textContent = "Start";
+    setFaceState("idle", "Ready", `Target: ${targetSeconds}s`);
+    updateStatus("Estimate the target interval.");
+    updateScore();
+  };
+
+  const handleToggle = () => {
+    if (running) {
+      stop();
+    } else {
+      start();
+    }
+  };
+
+  targetInput.addEventListener("input", () => {
+    syncSettings();
+    if (!running) {
+      setFaceState("idle", "Ready", `Target: ${targetSeconds}s`);
+    }
+  });
+  randomInput.addEventListener("change", syncSettings);
+  distractionsInput.addEventListener("change", syncSettings);
+  toggleBtn.addEventListener("click", handleToggle);
+  resetBtn.addEventListener("click", reset);
+
+  syncSettings();
+  updateScore();
+  setFaceState("idle", "Ready", `Target: ${targetSeconds}s`);
+
+  return { resetToIdle: reset };
+};
+
+const initRuleSwitcher = () => {
+  const roundsInput = document.querySelector("#rule-rounds");
+  const switchInput = document.querySelector("#rule-switch");
+  const sizeInput = document.querySelector("#rule-size");
+  const startBtn = document.querySelector("#rule-start");
+  const resetBtn = document.querySelector("#rule-reset");
+  const leftBtn = document.querySelector("#rule-left");
+  const rightBtn = document.querySelector("#rule-right");
+  const stimulusEl = document.querySelector("#rule-stimulus");
+  const stimulusLabelEl = document.querySelector("#rule-stimulus-label");
+  const statusEl = document.querySelector("#rule-status");
+  const scoreEl = document.querySelector("#rule-score");
+  const sizeLegend = document.querySelector(".rule-pill[data-rule=\"size\"]");
+
+  if (
+    !roundsInput ||
+    !switchInput ||
+    !sizeInput ||
+    !startBtn ||
+    !resetBtn ||
+    !leftBtn ||
+    !rightBtn ||
+    !stimulusEl ||
+    !stimulusLabelEl ||
+    !statusEl ||
+    !scoreEl
+  ) {
+    throw new Error("Required UI elements are missing for Rule Switcher.");
+  }
+
+  const colors = ["red", "blue"];
+  const shapes = ["circle", "triangle"];
+  const sizes = ["small", "large"];
+
+  let rounds = 20;
+  let switchPace = 6;
+  let includeSize = false;
+  let running = false;
+  let activeRule = "color";
+  let remainingUntilSwitch = 0;
+  let switchWindow = 0;
+  let currentRound = 0;
+  let correct = 0;
+  let total = 0;
+  let switchErrors = 0;
+  let awaiting = false;
+  let currentStimulus = { color: "red", shape: "circle", size: "large" };
+
+  const ruleMap = {
+    color: { red: "left", blue: "right" },
+    shape: { circle: "left", triangle: "right" },
+    size: { large: "left", small: "right" },
+  };
+
+  const updateStatus = (text) => {
+    statusEl.textContent = text;
+  };
+
+  const updateScore = () => {
+    scoreEl.textContent = `Correct: ${correct}/${total} | Switch errors: ${switchErrors}`;
+  };
+
+  const syncSettings = () => {
+    const parsedRounds = Number.parseInt(roundsInput.value, 10);
+    rounds = clamp(Number.isNaN(parsedRounds) ? 20 : parsedRounds, 10, 40);
+    roundsInput.value = String(rounds);
+
+    const parsedSwitch = Number.parseInt(switchInput.value, 10);
+    switchPace = clamp(Number.isNaN(parsedSwitch) ? 6 : parsedSwitch, 3, 10);
+    switchInput.value = String(switchPace);
+
+    includeSize = sizeInput.checked;
+    if (sizeLegend) {
+      sizeLegend.classList.toggle("is-hidden", !includeSize);
+    }
+  };
+
+  const nextSwitchCountdown = () => {
+    const min = clamp(switchPace - 2, 3, 12);
+    const max = clamp(switchPace + 2, min, 12);
+    return Math.floor(min + Math.random() * (max - min + 1));
+  };
+
+  const pickRule = (exclude) => {
+    const pool = includeSize ? ["color", "shape", "size"] : ["color", "shape"];
+    const options = exclude ? pool.filter((rule) => rule !== exclude) : pool;
+    return options[Math.floor(Math.random() * options.length)];
+  };
+
+  const renderStimulus = () => {
+    stimulusEl.classList.remove(
+      "shape-circle",
+      "shape-triangle",
+      "color-red",
+      "color-blue",
+      "size-small",
+      "size-large",
+      "is-correct",
+      "is-wrong",
+    );
+    stimulusEl.classList.add(
+      `shape-${currentStimulus.shape}`,
+      `color-${currentStimulus.color}`,
+      `size-${currentStimulus.size}`,
+    );
+    stimulusLabelEl.textContent =
+      currentStimulus.shape === "circle" ? "Circle" : "Triangle";
+  };
+
+  const buildStimulus = () => {
+    currentStimulus = {
+      color: colors[Math.floor(Math.random() * colors.length)],
+      shape: shapes[Math.floor(Math.random() * shapes.length)],
+      size: sizes[Math.floor(Math.random() * sizes.length)],
+    };
+    renderStimulus();
+    awaiting = true;
+  };
+
+  const showFeedback = (isCorrect) => {
+    stimulusEl.classList.add(isCorrect ? "is-correct" : "is-wrong");
+    window.setTimeout(() => {
+      stimulusEl.classList.remove("is-correct", "is-wrong");
+    }, 280);
+  };
+
+  const handleResponse = (side) => {
+    if (!running || !awaiting) return;
+    awaiting = false;
+    total += 1;
+    const expected = ruleMap[activeRule][currentStimulus[activeRule]];
+    const isCorrect = side === expected;
+    if (isCorrect) {
+      correct += 1;
+      updateStatus(`Correct. Round ${currentRound + 1}/${rounds}.`);
+    } else {
+      updateStatus(`Wrong. Round ${currentRound + 1}/${rounds}.`);
+      if (switchWindow > 0) {
+        switchErrors += 1;
+      }
+    }
+    showFeedback(isCorrect);
+    updateScore();
+    currentRound += 1;
+    remainingUntilSwitch -= 1;
+    if (switchWindow > 0) {
+      switchWindow -= 1;
+    }
+    if (remainingUntilSwitch <= 0) {
+      activeRule = pickRule(activeRule);
+      remainingUntilSwitch = nextSwitchCountdown();
+      switchWindow = 2;
+    }
+    if (currentRound >= rounds) {
+      stop("Session complete. Rule switches end.");
+      return;
+    }
+    buildStimulus();
+  };
+
+  const start = () => {
+    if (running) return;
+    syncSettings();
+    running = true;
+    currentRound = 0;
+    correct = 0;
+    total = 0;
+    switchErrors = 0;
+    activeRule = pickRule();
+    remainingUntilSwitch = nextSwitchCountdown();
+    switchWindow = 0;
+    leftBtn.disabled = false;
+    rightBtn.disabled = false;
+    startBtn.disabled = true;
+    updateScore();
+    updateStatus("Rule is live. Adapt on the fly.");
+    buildStimulus();
+  };
+
+  const stop = (message) => {
+    running = false;
+    awaiting = false;
+    leftBtn.disabled = true;
+    rightBtn.disabled = true;
+    startBtn.disabled = false;
+    updateStatus(message);
+  };
+
+  const reset = () => {
+    running = false;
+    awaiting = false;
+    currentRound = 0;
+    correct = 0;
+    total = 0;
+    switchErrors = 0;
+    startBtn.disabled = false;
+    leftBtn.disabled = true;
+    rightBtn.disabled = true;
+    updateScore();
+    updateStatus("Respond to the active rule.");
+    buildStimulus();
+    awaiting = false;
+  };
+
+  leftBtn.addEventListener("click", () => handleResponse("left"));
+  rightBtn.addEventListener("click", () => handleResponse("right"));
+  startBtn.addEventListener("click", start);
+  resetBtn.addEventListener("click", reset);
+  roundsInput.addEventListener("input", syncSettings);
+  switchInput.addEventListener("input", syncSettings);
+  sizeInput.addEventListener("change", syncSettings);
+
+  syncSettings();
+  updateScore();
+  reset();
+
+  return { resetToIdle: reset };
+};
+
+const initDelayedRecall = () => {
+  const sizeInput = document.querySelector("#recall-size");
+  const delayInput = document.querySelector("#recall-delay");
+  const startBtn = document.querySelector("#recall-start");
+  const resetBtn = document.querySelector("#recall-reset");
+  const setEl = document.querySelector("#recall-set");
+  const statusEl = document.querySelector("#recall-status");
+  const pulseBtn = document.querySelector("#recall-pulse");
+  const interferenceScoreEl = document.querySelector("#recall-interference-score");
+  const inputsEl = document.querySelector("#recall-inputs");
+  const submitBtn = document.querySelector("#recall-submit");
+  const scoreEl = document.querySelector("#recall-score");
+
+  if (
+    !sizeInput ||
+    !delayInput ||
+    !startBtn ||
+    !resetBtn ||
+    !setEl ||
+    !statusEl ||
+    !pulseBtn ||
+    !interferenceScoreEl ||
+    !inputsEl ||
+    !submitBtn ||
+    !scoreEl
+  ) {
+    throw new Error("Required UI elements are missing for Delayed Recall Ping.");
+  }
+
+  let size = 5;
+  let delaySec = 60;
+  let phase = "idle";
+  let items = [];
+  let revealTimer = null;
+  let countdownTimer = null;
+  let delayTimer = null;
+  let pulseTimer = null;
+  let pulseOffTimer = null;
+  let pulseActive = false;
+  let interferenceHits = 0;
+  let recallCorrect = 0;
+  let recallTotal = 0;
+
+  const updateStatus = (text) => {
+    statusEl.textContent = text;
+  };
+
+  const updateScore = () => {
+    scoreEl.textContent = `Recall: ${recallCorrect}/${recallTotal}`;
+    interferenceScoreEl.textContent = `Hits: ${interferenceHits}`;
+  };
+
+  const clearTimers = () => {
+    if (revealTimer !== null) {
+      window.clearTimeout(revealTimer);
+      revealTimer = null;
+    }
+    if (countdownTimer !== null) {
+      window.clearInterval(countdownTimer);
+      countdownTimer = null;
+    }
+    if (delayTimer !== null) {
+      window.clearTimeout(delayTimer);
+      delayTimer = null;
+    }
+    if (pulseTimer !== null) {
+      window.clearTimeout(pulseTimer);
+      pulseTimer = null;
+    }
+    if (pulseOffTimer !== null) {
+      window.clearTimeout(pulseOffTimer);
+      pulseOffTimer = null;
+    }
+  };
+
+  const syncSettings = () => {
+    const parsedSize = Number.parseInt(sizeInput.value, 10);
+    size = clamp(Number.isNaN(parsedSize) ? 5 : parsedSize, 3, 7);
+    sizeInput.value = String(size);
+
+    const parsedDelay = Number.parseInt(delayInput.value, 10);
+    delaySec = clamp(Number.isNaN(parsedDelay) ? 60 : parsedDelay, 30, 120);
+    delayInput.value = String(delaySec);
+  };
+
+  const shuffle = (itemsList) => {
+    for (let i = itemsList.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [itemsList[i], itemsList[j]] = [itemsList[j], itemsList[i]];
+    }
+    return itemsList;
+  };
+
+  const generateItems = (count) => {
+    const pool = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789".split("");
+    const selection = shuffle(pool).slice(0, count);
+    return selection;
+  };
+
+  const renderSet = (hidden) => {
+    setEl.innerHTML = "";
+    items.forEach((item) => {
+      const tile = document.createElement("div");
+      tile.className = "recall-item";
+      if (hidden) {
+        tile.classList.add("hidden");
+        tile.textContent = "-";
+      } else {
+        tile.textContent = item;
+      }
+      setEl.appendChild(tile);
+    });
+  };
+
+  const setPulseState = (active) => {
+    pulseActive = active;
+    pulseBtn.classList.toggle("active", active);
+    pulseBtn.textContent = active ? "Tap" : "Wait";
+  };
+
+  const schedulePulse = () => {
+    if (phase !== "delay") return;
+    const wait = 700 + Math.random() * 1400;
+    pulseTimer = window.setTimeout(() => {
+      setPulseState(true);
+      pulseOffTimer = window.setTimeout(() => {
+        setPulseState(false);
+        schedulePulse();
+      }, 600);
+    }, wait);
+  };
+
+  const startDelay = () => {
+    phase = "delay";
+    renderSet(true);
+    let remaining = delaySec;
+    updateStatus(`Delay running... ${remaining}s`);
+    setPulseState(false);
+    schedulePulse();
+    countdownTimer = window.setInterval(() => {
+      remaining -= 1;
+      if (remaining <= 0) {
+        if (countdownTimer !== null) {
+          window.clearInterval(countdownTimer);
+          countdownTimer = null;
+        }
+        beginRecall();
+      } else {
+        updateStatus(`Delay running... ${remaining}s`);
+      }
+    }, 1000);
+    delayTimer = window.setTimeout(beginRecall, delaySec * 1000);
+  };
+
+  const buildInputs = () => {
+    inputsEl.innerHTML = "";
+    for (let i = 0; i < items.length; i += 1) {
+      const input = document.createElement("input");
+      input.type = "text";
+      input.maxLength = 2;
+      input.autocomplete = "off";
+      inputsEl.appendChild(input);
+    }
+  };
+
+  const beginRecall = () => {
+    if (phase !== "delay") return;
+    clearTimers();
+    setPulseState(false);
+    phase = "recall";
+    renderSet(true);
+    buildInputs();
+    submitBtn.disabled = false;
+    updateStatus("Recall the set in order.");
+  };
+
+  const start = () => {
+    if (phase !== "idle") return;
+    syncSettings();
+    items = generateItems(size);
+    interferenceHits = 0;
+    updateScore();
+    phase = "showing";
+    startBtn.disabled = true;
+    submitBtn.disabled = true;
+    inputsEl.innerHTML = "";
+    renderSet(false);
+    updateStatus("Memorize the set.");
+    revealTimer = window.setTimeout(() => {
+      startDelay();
+    }, 4000);
+  };
+
+  const reset = () => {
+    phase = "idle";
+    clearTimers();
+    setPulseState(false);
+    items = [];
+    interferenceHits = 0;
+    recallCorrect = 0;
+    recallTotal = 0;
+    startBtn.disabled = false;
+    submitBtn.disabled = true;
+    setEl.innerHTML = "";
+    inputsEl.innerHTML = "";
+    updateScore();
+    updateStatus("Memorize the set, then wait for the ping.");
+  };
+
+  const submit = () => {
+    if (phase !== "recall") return;
+    const inputs = Array.from(inputsEl.querySelectorAll("input"));
+    let roundCorrect = 0;
+    inputs.forEach((input, index) => {
+      const guess = input.value.trim().toUpperCase();
+      const expected = items[index];
+      const isCorrect = guess === expected;
+      input.classList.toggle("correct", isCorrect);
+      input.classList.toggle("wrong", !isCorrect);
+      if (isCorrect) {
+        roundCorrect += 1;
+      }
+    });
+    recallCorrect += roundCorrect;
+    recallTotal += items.length;
+    updateScore();
+    updateStatus(`Recall complete. ${roundCorrect}/${items.length} correct.`);
+    renderSet(false);
+    submitBtn.disabled = true;
+    startBtn.disabled = false;
+    phase = "idle";
+  };
+
+  const handlePulseClick = () => {
+    if (phase !== "delay") return;
+    if (pulseActive) {
+      interferenceHits += 1;
+      setPulseState(false);
+      updateScore();
+    }
+  };
+
+  sizeInput.addEventListener("input", syncSettings);
+  delayInput.addEventListener("input", syncSettings);
+  startBtn.addEventListener("click", start);
+  resetBtn.addEventListener("click", reset);
+  submitBtn.addEventListener("click", submit);
+  pulseBtn.addEventListener("click", handlePulseClick);
+
+  syncSettings();
+  updateScore();
+  submitBtn.disabled = true;
+
+  return { resetToIdle: reset };
+};
+
+const initBinaryNoise = () => {
+  const roundsInput = document.querySelector("#noise-rounds");
+  const durationInput = document.querySelector("#noise-duration");
+  const levelInput = document.querySelector("#noise-level");
+  const startBtn = document.querySelector("#noise-start");
+  const resetBtn = document.querySelector("#noise-reset");
+  const fieldEl = document.querySelector("#noise-field");
+  const stimulusEl = document.querySelector("#noise-stimulus");
+  const overlayEl = document.querySelector("#noise-overlay");
+  const statusEl = document.querySelector("#noise-status");
+  const scoreEl = document.querySelector("#noise-score");
+  const leftBtn = document.querySelector("#noise-left");
+  const rightBtn = document.querySelector("#noise-right");
+
+  if (
+    !roundsInput ||
+    !durationInput ||
+    !levelInput ||
+    !startBtn ||
+    !resetBtn ||
+    !fieldEl ||
+    !stimulusEl ||
+    !overlayEl ||
+    !statusEl ||
+    !scoreEl ||
+    !leftBtn ||
+    !rightBtn
+  ) {
+    throw new Error("Required UI elements are missing for Binary Choice Under Noise.");
+  }
+
+  let rounds = 20;
+  let durationMs = 700;
+  let noiseLevel = 3;
+  let running = false;
+  let currentRound = 0;
+  let awaiting = false;
+  let answer = "left";
+  let startTime = 0;
+  let correct = 0;
+  let total = 0;
+  const reactionTimes = [];
+  let trialTimer = null;
+  let gapTimer = null;
+  let noiseTimer = null;
+
+  const updateStatus = (text) => {
+    statusEl.textContent = text;
+  };
+
+  const updateScore = () => {
+    const avg =
+      reactionTimes.length > 0
+        ? Math.round(reactionTimes.reduce((sum, value) => sum + value, 0) / reactionTimes.length)
+        : null;
+    const focus =
+      total > 0 && avg !== null
+        ? Math.round((correct / total) * (1000 / avg) * 100)
+        : null;
+    const avgLabel = avg ? `${avg}ms` : "--";
+    const focusLabel = focus !== null ? `${focus}` : "--";
+    scoreEl.textContent = `Accuracy: ${correct}/${total} | Avg RT: ${avgLabel} | Focus: ${focusLabel}`;
+  };
+
+  const syncSettings = () => {
+    const parsedRounds = Number.parseInt(roundsInput.value, 10);
+    rounds = clamp(Number.isNaN(parsedRounds) ? 20 : parsedRounds, 10, 40);
+    roundsInput.value = String(rounds);
+
+    const parsedDuration = Number.parseInt(durationInput.value, 10);
+    durationMs = clamp(Number.isNaN(parsedDuration) ? 700 : parsedDuration, 300, 1200);
+    durationInput.value = String(durationMs);
+
+    const parsedLevel = Number.parseInt(levelInput.value, 10);
+    noiseLevel = clamp(Number.isNaN(parsedLevel) ? 3 : parsedLevel, 1, 5);
+    levelInput.value = String(noiseLevel);
+  };
+
+  const clearTimers = () => {
+    if (trialTimer !== null) {
+      window.clearTimeout(trialTimer);
+      trialTimer = null;
+    }
+    if (gapTimer !== null) {
+      window.clearTimeout(gapTimer);
+      gapTimer = null;
+    }
+  };
+
+  const spawnNoise = () => {
+    const shard = document.createElement("div");
+    shard.className = "noise-shard";
+    const size = 8 + Math.random() * 22;
+    shard.style.width = `${size}px`;
+    shard.style.height = `${size}px`;
+    shard.style.left = `${Math.random() * 100}%`;
+    shard.style.top = `${Math.random() * 100}%`;
+    shard.style.background = Math.random() > 0.5 ? "rgba(125,165,255,0.6)" : "rgba(255,122,122,0.5)";
+    overlayEl.appendChild(shard);
+    window.setTimeout(() => shard.remove(), 700);
+  };
+
+  const startNoise = () => {
+    if (noiseTimer !== null) {
+      window.clearInterval(noiseTimer);
+    }
+    const interval = Math.max(90, 420 - noiseLevel * 70);
+    noiseTimer = window.setInterval(spawnNoise, interval);
+  };
+
+  const stopNoise = () => {
+    if (noiseTimer !== null) {
+      window.clearInterval(noiseTimer);
+      noiseTimer = null;
+    }
+    overlayEl.innerHTML = "";
+  };
+
+  const hideStimulus = () => {
+    stimulusEl.textContent = "-";
+  };
+
+  const endTrial = () => {
+    awaiting = false;
+    clearTimers();
+    hideStimulus();
+    currentRound += 1;
+    if (currentRound >= rounds) {
+      stop("Session complete.");
+      return;
+    }
+    gapTimer = window.setTimeout(nextTrial, 500);
+  };
+
+  const registerMiss = () => {
+    if (!awaiting) return;
+    awaiting = false;
+    total += 1;
+    updateStatus("Too slow.");
+    updateScore();
+    endTrial();
+  };
+
+  const nextTrial = () => {
+    if (!running) return;
+    if (currentRound >= rounds) {
+      stop("Session complete.");
+      return;
+    }
+    awaiting = true;
+    answer = Math.random() > 0.5 ? "left" : "right";
+    stimulusEl.textContent = answer === "left" ? "LEFT" : "RIGHT";
+    startTime = performance.now();
+    trialTimer = window.setTimeout(registerMiss, durationMs);
+    updateStatus(`Round ${currentRound + 1}/${rounds}`);
+  };
+
+  const handleChoice = (choice) => {
+    if (!running || !awaiting) return;
+    awaiting = false;
+    clearTimers();
+    total += 1;
+    const reaction = Math.round(performance.now() - startTime);
+    reactionTimes.push(reaction);
+    const isCorrect = choice === answer;
+    if (isCorrect) {
+      correct += 1;
+      updateStatus(`Correct. ${reaction}ms.`);
+    } else {
+      updateStatus("Wrong choice.");
+    }
+    updateScore();
+    endTrial();
+  };
+
+  const start = () => {
+    if (running) return;
+    syncSettings();
+    running = true;
+    currentRound = 0;
+    correct = 0;
+    total = 0;
+    reactionTimes.splice(0, reactionTimes.length);
+    updateScore();
+    startBtn.disabled = true;
+    leftBtn.disabled = false;
+    rightBtn.disabled = false;
+    startNoise();
+    nextTrial();
+  };
+
+  const stop = (message) => {
+    running = false;
+    awaiting = false;
+    clearTimers();
+    stopNoise();
+    startBtn.disabled = false;
+    leftBtn.disabled = true;
+    rightBtn.disabled = true;
+    hideStimulus();
+    updateStatus(message);
+  };
+
+  const reset = () => {
+    stop("Focus on the target and ignore the noise.");
+    correct = 0;
+    total = 0;
+    reactionTimes.splice(0, reactionTimes.length);
+    updateScore();
+  };
+
+  startBtn.addEventListener("click", start);
+  resetBtn.addEventListener("click", reset);
+  leftBtn.addEventListener("click", () => handleChoice("left"));
+  rightBtn.addEventListener("click", () => handleChoice("right"));
+  roundsInput.addEventListener("input", syncSettings);
+  durationInput.addEventListener("input", syncSettings);
+  levelInput.addEventListener("input", syncSettings);
+
+  syncSettings();
+  updateScore();
+  leftBtn.disabled = true;
+  rightBtn.disabled = true;
+  hideStimulus();
+
+  return { resetToIdle: reset };
+};
+
+const initMentalCount = () => {
+  const speedInput = document.querySelector("#count-speed");
+  const promptInput = document.querySelector("#count-prompt");
+  const plus2Input = document.querySelector("#count-plus2");
+  const startBtn = document.querySelector("#count-start");
+  const resetBtn = document.querySelector("#count-reset");
+  const streamEl = document.querySelector("#count-stream");
+  const promptArea = document.querySelector("#count-prompt-area");
+  const countInput = document.querySelector("#count-input");
+  const submitBtn = document.querySelector("#count-submit");
+  const statusEl = document.querySelector("#count-status");
+  const scoreEl = document.querySelector("#count-score");
+
+  if (
+    !speedInput ||
+    !promptInput ||
+    !plus2Input ||
+    !startBtn ||
+    !resetBtn ||
+    !streamEl ||
+    !promptArea ||
+    !countInput ||
+    !submitBtn ||
+    !statusEl ||
+    !scoreEl
+  ) {
+    throw new Error("Required UI elements are missing for Mental Count Drift.");
+  }
+
+  let speed = 900;
+  let promptInterval = 7;
+  let includePlus2 = false;
+  let running = false;
+  let count = 0;
+  let correct = 0;
+  let total = 0;
+  let lastAnswer = null;
+  let stepsSincePrompt = 0;
+  let nextPromptAt = 7;
+  let streamTimer = null;
+  let awaitingPrompt = false;
+
+  const updateStatus = (text) => {
+    statusEl.textContent = text;
+  };
+
+  const updateScore = () => {
+    const lastLabel = lastAnswer === null ? "--" : String(lastAnswer);
+    scoreEl.textContent = `Correct: ${correct}/${total} | Last: ${lastLabel}`;
+  };
+
+  const syncSettings = () => {
+    const parsedSpeed = Number.parseInt(speedInput.value, 10);
+    speed = clamp(Number.isNaN(parsedSpeed) ? 900 : parsedSpeed, 450, 1500);
+    speedInput.value = String(speed);
+
+    const parsedPrompt = Number.parseInt(promptInput.value, 10);
+    promptInterval = clamp(Number.isNaN(parsedPrompt) ? 7 : parsedPrompt, 4, 12);
+    promptInput.value = String(promptInterval);
+
+    includePlus2 = plus2Input.checked;
+  };
+
+  const clearTimer = () => {
+    if (streamTimer !== null) {
+      window.clearTimeout(streamTimer);
+      streamTimer = null;
+    }
+  };
+
+  const computeNextPromptAt = () => {
+    const min = clamp(promptInterval - 2, 3, 14);
+    const max = clamp(promptInterval + 2, min, 14);
+    return Math.floor(min + Math.random() * (max - min + 1));
+  };
+
+  const showPrompt = () => {
+    awaitingPrompt = true;
+    clearTimer();
+    promptArea.classList.add("active");
+    countInput.value = "";
+    countInput.focus();
+    updateStatus("What is the current count?");
+  };
+
+  const flashStream = () => {
+    streamEl.classList.add("flash");
+    window.setTimeout(() => streamEl.classList.remove("flash"), 180);
+  };
+
+  const streamStep = () => {
+    if (!running || awaitingPrompt) return;
+    const options = includePlus2 ? [-2, -1, 1, 2] : [-1, 1];
+    const delta = options[Math.floor(Math.random() * options.length)];
+    count += delta;
+    streamEl.textContent = delta > 0 ? `+${delta}` : `${delta}`;
+    flashStream();
+    stepsSincePrompt += 1;
+    if (stepsSincePrompt >= nextPromptAt) {
+      showPrompt();
+      return;
+    }
+    streamTimer = window.setTimeout(streamStep, speed);
+  };
+
+  const submit = () => {
+    if (!awaitingPrompt) return;
+    const parsed = Number.parseInt(countInput.value, 10);
+    if (Number.isNaN(parsed)) return;
+    lastAnswer = parsed;
+    total += 1;
+    if (parsed === count) {
+      correct += 1;
+      updateStatus("Correct.");
+    } else {
+      updateStatus(`Off. Actual count was ${count}.`);
+    }
+    updateScore();
+    awaitingPrompt = false;
+    promptArea.classList.remove("active");
+    stepsSincePrompt = 0;
+    nextPromptAt = computeNextPromptAt();
+    streamTimer = window.setTimeout(streamStep, speed);
+  };
+
+  const start = () => {
+    if (running) return;
+    syncSettings();
+    running = true;
+    count = 0;
+    correct = 0;
+    total = 0;
+    lastAnswer = null;
+    stepsSincePrompt = 0;
+    nextPromptAt = computeNextPromptAt();
+    awaitingPrompt = false;
+    promptArea.classList.remove("active");
+    updateScore();
+    updateStatus("Track the count and wait for the prompt.");
+    startBtn.disabled = true;
+    streamStep();
+  };
+
+  const stop = (message) => {
+    running = false;
+    awaitingPrompt = false;
+    clearTimer();
+    promptArea.classList.remove("active");
+    startBtn.disabled = false;
+    updateStatus(message);
+  };
+
+  const reset = () => {
+    stop("Track the count in your head.");
+    count = 0;
+    correct = 0;
+    total = 0;
+    lastAnswer = null;
+    updateScore();
+    streamEl.textContent = "+";
+  };
+
+  startBtn.addEventListener("click", start);
+  resetBtn.addEventListener("click", reset);
+  submitBtn.addEventListener("click", submit);
+  countInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      submit();
+    }
+  });
+  speedInput.addEventListener("input", syncSettings);
+  promptInput.addEventListener("input", syncSettings);
+  plus2Input.addEventListener("change", syncSettings);
+
+  syncSettings();
+  updateScore();
+  reset();
+
+  return { resetToIdle: reset };
+};
+
 const boot = () => {
   const heroTitleEl = document.querySelector("#hero-game-title");
   const heroSubEl = document.querySelector("#hero-game-sub");
@@ -1533,6 +2593,11 @@ const boot = () => {
   const patternGame = initPatternCompletion();
   const rotationGame = initMentalRotation();
   const juggleGame = initDualTaskJuggle();
+  const timeGame = initTimeEstimation();
+  const ruleGame = initRuleSwitcher();
+  const recallGame = initDelayedRecall();
+  const noiseGame = initBinaryNoise();
+  const countGame = initMentalCount();
 
   const games = [
     { id: "memory", title: "Memory Tester", description: "Sequence recall on a custom grid." },
@@ -1542,6 +2607,11 @@ const boot = () => {
     { id: "pattern", title: "Pattern Completion", description: "Fill the missing item in the sequence." },
     { id: "rotation", title: "Mental Rotation Snap", description: "Are the shapes the same when rotated?" },
     { id: "juggle", title: "Dual Task Juggle", description: "Track the orb while answering math." },
+    { id: "time", title: "Time Estimation Trap", description: "Estimate the hidden interval." },
+    { id: "rules", title: "Rule Switcher", description: "Adapt as the rule changes mid-run." },
+    { id: "recall", title: "Delayed Recall Ping", description: "Hold the set through a delay." },
+    { id: "noise", title: "Binary Choice Under Noise", description: "Choose under heavy distraction." },
+    { id: "count", title: "Mental Count Drift", description: "Track the running total." },
   ];
 
   let activeIndex = 0;
@@ -1584,6 +2654,21 @@ const boot = () => {
     }
     if (meta.id !== "juggle") {
       juggleGame.resetToIdle();
+    }
+    if (meta.id !== "time") {
+      timeGame.resetToIdle();
+    }
+    if (meta.id !== "rules") {
+      ruleGame.resetToIdle();
+    }
+    if (meta.id !== "recall") {
+      recallGame.resetToIdle();
+    }
+    if (meta.id !== "noise") {
+      noiseGame.resetToIdle();
+    }
+    if (meta.id !== "count") {
+      countGame.resetToIdle();
     }
   };
 
